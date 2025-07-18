@@ -15,10 +15,10 @@ import { mcpTools } from './tools';
 import { createDebugPanel } from './debugPanel';
 import { mcpServer, httpServer, setMcpServer, setHttpServer } from './globals';
 import { runTool } from './toolRunner';
-import { findBifrostConfig, BifrostConfig, getProjectBasePath } from './config';
+import { findSourceNavigatorConfig, SourceNavigatorConfig, getProjectBasePath } from './config';
 
 export async function activate(context: vscode.ExtensionContext) {
-    let currentConfig: BifrostConfig | null = null;
+    let currentConfig: SourceNavigatorConfig | null = null;
 
     // Handle workspace folder changes
     context.subscriptions.push(
@@ -32,14 +32,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register debug panel command
     context.subscriptions.push(
-        vscode.commands.registerCommand('bifrost-mcp.openDebugPanel', () => {
+        vscode.commands.registerCommand('source-navigator.openDebugPanel', () => {
             createDebugPanel(context);
         })
     );
 
     // Register commands
     context.subscriptions.push(
-        vscode.commands.registerCommand('bifrost-mcp.startServer', async () => {
+        vscode.commands.registerCommand('source-navigator.startServer', async () => {
             try {
                 if (httpServer) {
                     vscode.window.showInformationMessage(`MCP server is already running for project ${currentConfig?.projectName || 'unknown'}`);
@@ -51,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage(`Failed to start MCP server: ${errorMsg}`);
             }
         }),
-        vscode.commands.registerCommand('bifrost-mcp.stopServer', async () => {
+        vscode.commands.registerCommand('source-navigator.stopServer', async () => {
             if (!httpServer && !mcpServer) {
                 vscode.window.showInformationMessage('No MCP server is currently running');
                 return;
@@ -90,12 +90,12 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         // Find config in current workspace - will return DEFAULT_CONFIG if none found
-        const config = await findBifrostConfig(workspaceFolders[0]);
-        currentConfig = config!; // We know this is never null since findBifrostConfig always returns DEFAULT_CONFIG
+        const config = await findSourceNavigatorConfig(workspaceFolders[0]);
+        currentConfig = config!; // We know this is never null since findSourceNavigatorConfig always returns DEFAULT_CONFIG
         await startMcpServer(config!);
     }
 
-    async function startMcpServer(config: BifrostConfig): Promise<{ mcpServer: Server, httpServer: HttpServer, port: number }> {
+    async function startMcpServer(config: SourceNavigatorConfig): Promise<{ mcpServer: Server, httpServer: HttpServer, port: number }> {
         // Create an MCP Server with project-specific info
         setMcpServer(new Server(
             {
@@ -250,8 +250,8 @@ export async function activate(context: vscode.ExtensionContext) {
             };
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            vscode.window.showErrorMessage(`Failed to start server on configured port ${config.port}${basePath}. Please check if the port is available or configure a different port in bifrost.config.json. Error: ${errorMsg}`);
-            throw new Error(`Failed to start server on configured port ${config.port}. Please check if the port is available or configure a different port in bifrost.config.json. Error: ${errorMsg}`);
+            vscode.window.showErrorMessage(`Failed to start server on configured port ${config.port}${basePath}. Please check if the port is available or configure a different port in source-navigator.config.json. Error: ${errorMsg}`);
+            throw new Error(`Failed to start server on configured port ${config.port}. Please check if the port is available or configure a different port in source-navigator.config.json. Error: ${errorMsg}`);
         }
     }
 }

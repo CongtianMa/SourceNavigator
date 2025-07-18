@@ -1,13 +1,13 @@
 {
-  "name": "bifrost-mcp",
-  "displayName": "Bifrost - VSCode Dev Tools MCP Server",
-  "description": "An MCP server that exposes features of VSCode dev tools to the MCP clients",
+  "name": "source-navigator",
+  "displayName": "SourceNavigator - VSCode Dev Tools MCP Server",
+  "description": "An MCP server that provides intelligent code navigation and analysis tools for AI assistants",
   "version": "0.0.13",
   "publisher": "ConnorHallman",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/biegehydra/csharplangmcpserver"
+    "url": "https://github.com/macongtian/SourceNavigator"
   },
   "engines": {
     "vscode": "^1.93.0"
@@ -18,11 +18,11 @@
     "Language Packs"
   ],
   "keywords": [
-    "C#",
     "MCP",
-    "dotnet",
     "AI",
-    "find references"
+    "code navigation",
+    "source analysis",
+    "development tools"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -31,20 +31,20 @@
   "contributes": {
     "commands": [
       {
-        "command": "bifrost-mcp.startServer",
-        "title": "Bifrost MCP: Start Server"
+        "command": "source-navigator.startServer",
+        "title": "SourceNavigator: Start Server"
       },
       {
-        "command": "bifrost-mcp.startServerOnPort",
-        "title": "Bifrost MCP: Start Server on Port"
+        "command": "source-navigator.startServerOnPort",
+        "title": "SourceNavigator: Start Server on Port"
       },
       {
-        "command": "bifrost-mcp.stopServer",
-        "title": "Bifrost MCP: Stop Server"
+        "command": "source-navigator.stopServer",
+        "title": "SourceNavigator: Stop Server"
       },
       {
-        "command": "bifrost-mcp.openDebugPanel",
-        "title": "Bifrost MCP: Open Debug Panel"
+        "command": "source-navigator.openDebugPanel",
+        "title": "SourceNavigator: Open Debug Panel"
       }
     ]
   },

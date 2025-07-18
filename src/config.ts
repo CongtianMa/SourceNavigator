@@ -1,32 +1,32 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export interface BifrostConfig {
+export interface SourceNavigatorConfig {
     projectName: string;
     description: string;
     path: string;
     port: number;
 }
 
-export const DEFAULT_CONFIG: BifrostConfig = {
+export const DEFAULT_CONFIG: SourceNavigatorConfig = {
     projectName: "language-tools",
     description: "Language tools and code analysis",
     path: "",  // Empty path for backwards compatibility
     port: 8008 // Default port for backwards compatibility
 };
 
-export async function findBifrostConfig(workspaceFolder: vscode.WorkspaceFolder): Promise<BifrostConfig> {
-    const configPath = path.join(workspaceFolder.uri.fsPath, 'bifrost.config.json');
+export async function findSourceNavigatorConfig(workspaceFolder: vscode.WorkspaceFolder): Promise<SourceNavigatorConfig> {
+    const configPath = path.join(workspaceFolder.uri.fsPath, 'source-navigator.config.json');
     
     try {
         // Check if config file exists and read it
         const configFile = await vscode.workspace.fs.readFile(vscode.Uri.file(configPath));
         const configContent = Buffer.from(configFile).toString('utf8');
-        const config: BifrostConfig = JSON.parse(configContent);
+        const config: SourceNavigatorConfig = JSON.parse(configContent);
         
         // Validate config
         if (!config.projectName || !config.description || config.path === undefined) {
-            throw new Error('Invalid bifrost.config.json: missing required fields');
+            throw new Error('Invalid source-navigator.config.json: missing required fields');
         }
 
         // Use default port if not specified
@@ -41,12 +41,12 @@ export async function findBifrostConfig(workspaceFolder: vscode.WorkspaceFolder)
             port: config.port
         };
     } catch (error) {
-        console.log(`No valid bifrost.config.json found in ${workspaceFolder.name}, using default config`);
+        console.log(`No valid source-navigator.config.json found in ${workspaceFolder.name}, using default config`);
         return DEFAULT_CONFIG;
     }
 }
 
-export function getProjectBasePath(config: BifrostConfig): string {
+export function getProjectBasePath(config: SourceNavigatorConfig): string {
     // For backwards compatibility, if path is empty, return empty string (root path)
     if (!config.path) {
         return '';

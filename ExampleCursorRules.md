@@ -1,56 +1,56 @@
-## 项目理解工具使用指南
+## Project Understanding Tool Usage Guide
 
-当需要深入了解项目结构和代码时，请优先使用以下两个工具：
+When you need to deeply understand project structure and code, please prioritize using the following two tools:
 
-### 1. mcp__get_type_definition - 类型定义查找工具
-**何时使用：**
-- 遇到不熟悉的类型、接口或类时
-- 需要了解某个类型的属性和方法时
-- 查看枚举值或联合类型定义时
-- 验证类型导入或检查继承关系时
+### 1. mcp__get_type_definition - Type Definition Lookup Tool
+**When to use:**
+- When encountering unfamiliar types, interfaces, or classes
+- When you need to understand the properties and methods of a type
+- When viewing enum values or union type definitions
+- When verifying type imports or checking inheritance relationships
 
-**使用建议：**
-- 优先使用全限定名称（如 'MyNamespace.MyType'）获得精确结果
+**Usage recommendations:**
+- Prioritize using fully qualified names (e.g., 'MyNamespace.MyType') for precise results
 
-**示例场景：**
-- 用户问："这个 User 接口有哪些属性？"
-- 代码中出现未知类型时
-- 需要了解第三方库的类型定义时
+**Example scenarios:**
+- User asks: "What properties does this User interface have?"
+- When unknown types appear in code
+- When you need to understand third-party library type definitions
 
-### 2. mcp__read_outer_file - 外部文件读取工具
-**何时使用：**
-- 需要查看第三方库源码了解API用法时
-- 读取配置文件了解项目设置时
-- 查看文档文件获取使用说明时
-- 分析依赖包结构时
+### 2. mcp__read_outer_file - External File Reading Tool
+**When to use:**
+- When you need to view third-party library source code to understand API usage
+- When reading configuration files to understand project settings
+- When viewing documentation files to get usage instructions
+- When analyzing dependency package structure
 
-**使用建议：**
-- 大文件建议指定行范围提高效率
-- 小文件或用户明确要求时可读取整个文件
-- 支持相对路径、绝对路径和URI格式
+**Usage recommendations:**
+- For large files, specify line ranges to improve efficiency
+- For small files or when user explicitly requests, you can read the entire file
+- Supports relative paths, absolute paths, and URI formats
 
-**⚠️ 重要：URI处理注意事项**
-当从 mcp__get_type_definition 获取的URI传递给 mcp__read_outer_file 时：
-- 确保URI保持原始格式，不要手动修改
-- 特别注意JDT URI格式（如jdt://contents/...）
-- 避免对URI进行额外的编码或解码操作
-- 如果URI包含特殊字符，直接使用原始URI即可
+**⚠️ Important: URI Handling Notes**
+When passing URIs obtained from mcp__get_type_definition to mcp__read_outer_file:
+- Ensure URIs maintain their original format, do not manually modify them
+- Pay special attention to JDT URI format (e.g., jdt://contents/...)
+- Avoid performing additional encoding or decoding operations on URIs
+- If URIs contain special characters, use the original URI directly
 
-**示例场景：**
-- 用户问："这个库怎么用？"
-- 需要查看 package.json 了解依赖时
-- 查看 README 或文档时
+**Example scenarios:**
+- User asks: "How do I use this library?"
+- When you need to view package.json to understand dependencies
+- When viewing README or documentation
 
-### 使用流程建议：
-1. 首先尝试使用 mcp__get_type_definition 查找相关类型定义
-2. 如果需要更详细的上下文，使用 mcp__read_outer_file 读取相关文件
-   - **直接使用** mcp__get_type_definition 返回的 target_file 值
-   - **不要修改** URI中的任何字符
-3. 根据获取的信息为用户提供准确的解答
+### Recommended Usage Flow:
+1. First try using mcp__get_type_definition to find relevant type definitions
+2. If more detailed context is needed, use mcp__read_outer_file to read relevant files
+   - **Use directly** the target_file value returned by mcp__get_type_definition
+   - **Do not modify** any characters in the URI
+3. Provide accurate answers to users based on the obtained information
 
-### 常见问题解决：
-- **URI编码问题**：如果遇到URI解析错误，检查是否对URI进行了不必要的修改
-- **JDT URI**：Java开发工具URI格式需要特殊处理，保持原始格式
-- **Maven依赖**：jar包内的类文件URI通常包含复杂的查询参数，直接使用即可
+### Common Problem Solutions:
+- **URI Encoding Issues**: If you encounter URI parsing errors, check if unnecessary modifications were made to the URI
+- **JDT URI**: Java Development Tools URI format requires special handling, maintain original format
+- **Maven Dependencies**: JAR package class file URIs usually contain complex query parameters, use directly
 
-记住：这两个工具是理解项目的核心工具，合理使用它们可以大大提高回答的准确性和深度。
+Remember: These two tools are the core tools for understanding projects. Using them appropriately can greatly improve the accuracy and depth of your answers.

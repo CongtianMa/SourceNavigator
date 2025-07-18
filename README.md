@@ -1,13 +1,13 @@
-# Bifrost - VSCode Dev Tools MCP Server
-<a href="https://marketplace.visualstudio.com/items?itemName=ConnorHallman.bifrost-mcp">
-  <img src="https://img.shields.io/visual-studio-marketplace/d/ConnorHallman.bifrost-mcp?label=VSCode%20Extension%20Downloads&cacheSeconds=3600" 
+# SourceNavigator - VSCode Dev Tools MCP Server
+<a href="https://marketplace.visualstudio.com/items?itemName=ConnorHallman.source-navigator">
+  <img src="https://img.shields.io/visual-studio-marketplace/d/ConnorHallman.source-navigator?label=VSCode%20Extension%20Downloads&cacheSeconds=3600" 
        alt="VSCode Extension Downloads" 
        width="250">
 </a>
 
-This VS Code extension provides a Model Context Protocol (MCP) server that exposes VSCode's powerful development tools and language features to AI tools. It enables advanced code navigation, analysis, and manipulation capabilities when using AI coding assistants that support the MCP protocol.
+This VS Code extension provides a Model Context Protocol (MCP) server that offers intelligent code navigation and analysis tools for AI assistants. It enables advanced source code understanding, type definition exploration, and external file analysis capabilities when using AI coding assistants that support the MCP protocol.
 
-![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/cursor.png)
+![image](https://raw.githubusercontent.com/macongtian/SourceNavigator/refs/heads/master/src/images/cursor.png)
 
 ## Table of Contents
 - [Features](#features)
@@ -23,20 +23,18 @@ This VS Code extension provides a Model Context Protocol (MCP) server that expos
 
 ## Features
 
-- **Language Server Integration**: Access VSCode's language server capabilities for any supported language
-- **Code Navigation**: Find references, definitions, implementations, and more
-- **Symbol Search**: Search for symbols across your workspace
-- **Code Analysis**: Get semantic tokens, document symbols, and type information
-- **Smart Selection**: Use semantic selection ranges for intelligent code selection
-- **Code Actions**: Access refactoring suggestions and quick fixes
-- **HTTP/SSE Server**: Exposes language features over an MCP-compatible HTTP server
-- **AI Assistant Integration**: Ready to work with AI assistants that support the MCP protocol
+- **Type Definition Analysis**: Intelligent search and analysis of type definitions across the workspace
+- **External File Reading**: Read and analyze external dependencies, configuration files, and project documents
+- **Advanced Code Navigation**: Deep understanding of code structure and relationships
+- **AI-Optimized Tools**: Tools specifically designed for AI assistant workflows
+- **HTTP/SSE Server**: Exposes analysis capabilities over an MCP-compatible HTTP server
+- **Multi-Project Support**: Dedicated endpoints and ports for different projects
 
 ## Usage
 
 ### Installation
 
-1. Install [the extension](https://marketplace.visualstudio.com/items?itemName=ConnorHallman.bifrost-mcp) from the VS Code marketplace
+1. Install [the extension](https://marketplace.visualstudio.com/items?itemName=ConnorHallman.source-navigator) from the VS Code marketplace
 2. Install any language-specific extensions you need for your development
 3. Open your project in VS Code
 
@@ -44,7 +42,7 @@ This VS Code extension provides a Model Context Protocol (MCP) server that expos
 
 The extension will automatically start an MCP server when activated. To configure an AI assistant to use this server:
 
-1. The server runs on port 8008 by default (configurable with `bifrost.config.json`)
+1. The server runs on port 8008 by default (configurable with `source-navigator.config.json`)
 2. Configure your MCP-compatible AI assistant to connect to:
    - SSE endpoint: `http://localhost:8008/sse`
    - Message endpoint: `http://localhost:8008/message`
@@ -52,9 +50,9 @@ The extension will automatically start an MCP server when activated. To configur
 ### LLM Rules
 I have also provided sample rules that can be used in .cursorrules files for better results.
 
-[Example Cursor Rules](https://github.com/biegehydra/BifrostMCP/blob/master/ExampleCursorRules.md)
+[Example Cursor Rules](https://github.com/macongtian/SourceNavigator/blob/master/ExampleCursorRules.md)
 
-[Example MDC Rules](https://github.com/biegehydra/BifrostMCP/blob/master/example.mdc)
+[Example MDC Rules](https://github.com/macongtian/SourceNavigator/blob/master/example.mdc)
 
 ### Cline Installation
 - Step 1. Install [Supergateway](https://github.com/supercorp-ai/supergateway)
@@ -65,7 +63,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
 ```json
 {
   "mcpServers": {
-    "Bifrost": {
+    "SourceNavigator": {
       "command": "cmd",
       "args": [
         "/c",
@@ -87,7 +85,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
 ```json
 {
   "mcpServers": {
-    "Bifrost": {
+    "SourceNavigator": {
       "command": "npx",
       "args": [
         "-y",
@@ -108,7 +106,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
 ```json
 {
   "mcpServers": {
-    "Bifrost": {
+    "SourceNavigator": {
       "url": "http://localhost:8008/sse"
     }
   }
@@ -123,7 +121,7 @@ Follow this video to install and use with cursor
 ```json
 {
   "mcpServers": {
-    "Bifrost": {
+    "SourceNavigator": {
       "url": "http://localhost:8008/sse"
     }
   }
@@ -136,7 +134,7 @@ When working with multiple projects, each project can have its own dedicated MCP
 
 ### Project Configuration
 
-Create a `bifrost.config.json` file in your project root:
+Create a `source-navigator.config.json` file in your project root:
 
 ```json
 {
@@ -179,7 +177,7 @@ The server will use this configuration to:
 
 Each project should specify its own unique port to avoid conflicts when multiple VS Code instances are running:
 
-- The `port` field in `bifrost.config.json` determines which port the server will use
+- The `port` field in `source-navigator.config.json` determines which port the server will use
 - If no port is specified, it defaults to 8008 for backwards compatibility
 - Choose different ports for different projects to ensure they can run simultaneously
 - The server will fail to start if the configured port is already in use, requiring you to either:
@@ -206,7 +204,7 @@ Update your AI assistant configuration to use the project-specific endpoint and 
 
 ### Backwards Compatibility
 
-If no `bifrost.config.json` is present, the server will use the default configuration:
+If no `source-navigator.config.json` is present, the server will use the default configuration:
 - Port: 8008
 - SSE endpoint: `http://localhost:8008/sse`
 - Message endpoint: `http://localhost:8008/message`
@@ -215,27 +213,10 @@ This maintains compatibility with existing configurations and tools.
 
 ## Available Tools
 
-The extension provides access to many VSCode language features including:
+The extension provides intelligent code analysis and navigation tools:
 
-* **find\_usages**: Locate all symbol references.
-* **go\_to\_definition**: Jump to symbol definitions instantly.
-* **find\_implementations**: Discover implementations of interfaces/abstract methods.
-* **get\_hover\_info**: Get rich symbol docs on hover.
-* **get\_document\_symbols**: Outline all symbols in a file.
-* **get\_completions**: Context-aware auto-completions.
-* **get\_signature\_help**: Function parameter hints and overloads.
-* **get\_rename\_locations**: Safely get location of places to perform a rename across the project.
-* **rename**: Perform rename on a symbol
-* **get\_code\_actions**: Quick fixes, refactors, and improvements.
-* **get\_semantic\_tokens**: Enhanced highlighting data.
-* **get\_call\_hierarchy**: See incoming/outgoing call relationships.
-* **get\_type\_hierarchy**: Visualize class and interface inheritance.
-* **get\_code\_lens**: Inline insights (references, tests, etc.).
-* **get\_selection\_range**: Smart selection expansion for code blocks.
-* **get\_type\_definition**: Jump to underlying type definitions.
-* **get\_declaration**: Navigate to symbol declarations.
-* **get\_document\_highlights**: Highlight all occurrences of a symbol.
-* **get\_workspace\_symbols**: Search symbols across your entire workspace.
+* **get\_type\_definition**: Find and analyze type definitions across the workspace with intelligent search capabilities.
+* **read\_outer\_file**: Read external files, dependencies, and configuration files with support for various URI formats and line range specifications.
 
 ## Requirements
 
@@ -244,44 +225,38 @@ The extension provides access to many VSCode language features including:
 
 ### Available Commands
 
-- `Bifrost MCP: Start Server` - Manually start the MCP server on port 8008
-- `Bifrost MCP: Start Server on port` - Manually start the MCP server on specified port
-- `Bifrost MCP: Stop Server` - Stop the running MCP server
-- `Bifrost MCP: Open Debug Panel` - Open the debug panel to test available tools
+- `SourceNavigator: Start Server` - Manually start the MCP server on port 8008
+- `SourceNavigator: Start Server on Port` - Manually start the MCP server on specified port
+- `SourceNavigator: Stop Server` - Stop the running MCP server
+- `SourceNavigator: Open Debug Panel` - Open the debug panel to test available tools
 
-![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/commands.png)
+![image](https://raw.githubusercontent.com/macongtian/SourceNavigator/refs/heads/master/src/images/commands.png)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=biegehydra/BifrostMCP&type=Date)](https://star-history.com/#biegehydra/BifrostMCP&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=macongtian/SourceNavigator&type=Date)](https://star-history.com/#macongtian/SourceNavigator&Date)
 
 ## Example Tool Usage
 
-### Find References
+### Type Definition Search
 ```json
 {
-  "name": "find_usages",
+  "name": "get_type_definition",
   "arguments": {
-    "textDocument": {
-      "uri": "file:///path/to/your/file"
-    },
-    "position": {
-      "line": 10,
-      "character": 15
-    },
-    "context": {
-      "includeDeclaration": true
-    }
+    "name": "MyClass"
   }
 }
 ```
 
-### Workspace Symbol Search
+### External File Reading
 ```json
 {
-  "name": "get_workspace_symbols",
+  "name": "read_outer_file",
   "arguments": {
-    "query": "MyClass"
+    "target_file": "file:///path/to/your/file",
+    "should_read_entire_file": false,
+    "start_line_one_indexed": 1,
+    "end_line_one_indexed_inclusive": 50
   }
 }
 ```
@@ -296,14 +271,13 @@ If you encounter issues:
 4. Check the VSCode output panel for any error messages
 
 ## Contributing
-Here are [Vscodes commands](https://github.com/microsoft/vscode-docs/blob/main/api/references/commands.md?plain=1) if you want to add additional functionality go ahead. I think we still need rename and a few others.
-Please feel free to submit issues or pull requests to the [GitHub repository](https://github.com/biegehydra/csharplangmcpserver).
+This project is based on the original Bifrost MCP server but has been significantly modified to focus on intelligent code navigation and analysis tools. Please feel free to submit issues or pull requests to the [GitHub repository](https://github.com/macongtian/SourceNavigator).
 
 `vsce package`
 
 ## Debugging
 Use the `MCP: Open Debug Panel` command
-![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/debug_panel.png)
+![image](https://raw.githubusercontent.com/macongtian/SourceNavigator/refs/heads/master/src/images/debug_panel.png)
 
 ## License
 
