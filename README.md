@@ -1,157 +1,310 @@
-# Source Navigator 项目总结
+# Bifrost - VSCode Dev Tools MCP Server
+<a href="https://marketplace.visualstudio.com/items?itemName=ConnorHallman.bifrost-mcp">
+  <img src="https://img.shields.io/visual-studio-marketplace/d/ConnorHallman.bifrost-mcp?label=VSCode%20Extension%20Downloads&cacheSeconds=3600" 
+       alt="VSCode Extension Downloads" 
+       width="250">
+</a>
 
-## 项目概述
+This VS Code extension provides a Model Context Protocol (MCP) server that exposes VSCode's powerful development tools and language features to AI tools. It enables advanced code navigation, analysis, and manipulation capabilities when using AI coding assistants that support the MCP protocol.
 
-Source Navigator 是一个基于 VSCode 语言服务器的 MCP (Model Context Protocol) 服务器，参考了 BifrostMCP 项目的架构和功能。该项目旨在为 AI 助手提供强大的代码导航和分析能力。
+![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/cursor.png)
 
-## 项目结构
+## Table of Contents
+- [Features](#features)
+- [Installation/Usage](#usage)
+- [Multi-Project Support](#multiple-project-support)
+- [Available Tools](#available-tools)
+- [Installation](#installation)
+- [Available Commands](#available-commands)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Debugging](#debugging)
+- [License](#license)
 
-```
-SourceNavigator/
-├── src/                    # 源代码目录
-│   ├── extension.ts        # 主要扩展入口文件
-│   ├── tools.ts           # MCP 工具定义
-│   ├── toolRunner.ts      # 工具运行器实现
-│   ├── config.ts          # 配置管理
-│   ├── globals.ts         # 全局变量管理
-│   ├── debugPanel.ts      # 调试面板
-│   ├── helpers.ts         # 辅助函数
-│   └── test/              # 测试文件
-│       └── test.ts        # 示例测试文件
-├── dist/                  # 构建输出目录
-├── package.json           # 项目配置
-├── tsconfig.json          # TypeScript 配置
-├── webpack.config.js      # Webpack 配置
-├── eslint.config.mjs      # ESLint 配置
-├── README.md              # 项目说明
-├── example-usage.ts       # 使用示例
-└── example.source-navigator.config.json  # 示例配置文件
-```
+## Features
 
-## 核心功能
+- **Language Server Integration**: Access VSCode's language server capabilities for any supported language
+- **Code Navigation**: Find references, definitions, implementations, and more
+- **Symbol Search**: Search for symbols across your workspace
+- **Code Analysis**: Get semantic tokens, document symbols, and type information
+- **Smart Selection**: Use semantic selection ranges for intelligent code selection
+- **Code Actions**: Access refactoring suggestions and quick fixes
+- **HTTP/SSE Server**: Exposes language features over an MCP-compatible HTTP server
+- **AI Assistant Integration**: Ready to work with AI assistants that support the MCP protocol
 
-### 1. MCP 服务器
-- 基于 `@modelcontextprotocol/sdk` 实现
-- 支持 SSE (Server-Sent Events) 传输
-- 提供 HTTP 端点用于 AI 助手连接
+## Usage
 
-### 2. 代码导航工具
-- **find_usages**: 查找符号的所有引用
-- **go_to_definition**: 跳转到符号定义
-- **get_hover_info**: 获取悬停信息
-- **get_document_symbols**: 获取文档符号
-- **get_workspace_symbols**: 搜索工作区符号
+### Installation
 
-### 3. 多项目支持
-- 每个项目可以有独立的配置
-- 支持自定义端口和路径
-- 项目隔离，避免冲突
+1. Install [the extension](https://marketplace.visualstudio.com/items?itemName=ConnorHallman.bifrost-mcp) from the VS Code marketplace
+2. Install any language-specific extensions you need for your development
+3. Open your project in VS Code
 
-### 4. 调试面板
-- 内置 WebView 调试界面
-- 实时测试工具功能
-- 服务器状态监控
+### Configuration
 
-## 技术特点
+The extension will automatically start an MCP server when activated. To configure an AI assistant to use this server:
 
-### 1. 使用 VSCode 原生 API
-- 直接使用 `vscode.commands.executeCommand` 调用语言服务器
-- 无需复杂的语言客户端管理
-- 更好的兼容性和稳定性
+1. The server runs on port 8008 by default (configurable with `bifrost.config.json`)
+2. Configure your MCP-compatible AI assistant to connect to:
+   - SSE endpoint: `http://localhost:8008/sse`
+   - Message endpoint: `http://localhost:8008/message`
 
-### 2. 中文界面和文档
-- 所有用户界面和文档都使用中文
-- 符合中文用户的使用习惯
-- 详细的错误信息和提示
+### LLM Rules
+I have also provided sample rules that can be used in .cursorrules files for better results.
 
-### 3. 模块化设计
-- 清晰的模块分离
-- 易于维护和扩展
-- 良好的代码组织结构
+[Example Cursor Rules](https://github.com/biegehydra/BifrostMCP/blob/master/ExampleCursorRules.md)
 
-## 配置说明
+[Example MDC Rules](https://github.com/biegehydra/BifrostMCP/blob/master/example.mdc)
 
-### 项目配置文件
-```json
-{
-    "projectName": "MyProject",
-    "description": "项目描述",
-    "path": "/my-project",
-    "port": 8009
-}
-```
+### Cline Installation
+- Step 1. Install [Supergateway](https://github.com/supercorp-ai/supergateway)
+- Step 2. Add config to cline
+- Step 3. It will show up red but seems to work fine
 
-### AI 助手配置
+#### Windows Config
 ```json
 {
   "mcpServers": {
-    "SourceNavigator": {
-      "url": "http://localhost:8009/source-navigator/sse"
+    "Bifrost": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "supergateway",
+        "--sse",
+        "http://localhost:8008/sse"
+      ],
+      "disabled": false,
+      "autoApprove": [],
+      "timeout": 600
     }
   }
 }
 ```
 
-## 构建和部署
-
-### 开发环境
-```bash
-npm install
-npm run compile
-npm run watch
+#### Mac/Linux Config
+```json
+{
+  "mcpServers": {
+    "Bifrost": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "supergateway",
+        "--sse",
+        "http://localhost:8008/sse"
+      ],
+      "disabled": false,
+      "autoApprove": [],
+      "timeout": 600
+    }
+  }
+}
 ```
 
-### 生产构建
-```bash
-npm run package
+### Roo Code Installation
+- Step 1: Add the SSE config to your global or project-based MCP configuration
+```json
+{
+  "mcpServers": {
+    "Bifrost": {
+      "url": "http://localhost:8008/sse"
+    }
+  }
+}
 ```
 
-### 调试
-- 按 F5 启动调试会话
-- 使用调试面板测试功能
-- 查看控制台输出
+![Screenshot_78](https://github.com/user-attachments/assets/55588c9e-7f88-4830-b87f-184018873ca1)
 
-## 与 BifrostMCP 的对比
+Follow this video to install and use with cursor
 
-### 相似之处
-- 基于 MCP 协议
-- 提供代码导航功能
-- 支持多项目配置
-- 使用 Express 服务器
+#### FOR NEW VERSIONS OF CURSOR, USE THIS CODE
+```json
+{
+  "mcpServers": {
+    "Bifrost": {
+      "url": "http://localhost:8008/sse"
+    }
+  }
+}
+```
 
-### 改进之处
-- 使用 VSCode 原生 API 而非语言客户端
-- 中文界面和文档
-- 更简洁的架构
-- 更好的错误处理
+## Multiple Project Support
 
-### 功能差异
-- Source Navigator 专注于核心导航功能
-- BifrostMCP 提供更多高级功能
-- Source Navigator 更适合学习和定制
+When working with multiple projects, each project can have its own dedicated MCP server endpoint and port. This is useful when you have multiple VS Code windows open or are working with multiple projects that need language server capabilities.
 
-## 使用场景
+### Project Configuration
 
-1. **AI 代码助手**: 为 AI 助手提供代码理解能力
-2. **代码分析**: 快速分析代码结构和依赖关系
-3. **重构支持**: 安全地进行代码重构
-4. **学习工具**: 帮助理解大型代码库
+Create a `bifrost.config.json` file in your project root:
 
-## 未来发展方向
+```json
+{
+    "projectName": "MyProject",
+    "description": "Description of your project",
+    "path": "/my-project",
+    "port": 5642
+}
+```
 
-1. **更多语言支持**: 扩展对更多编程语言的支持
-2. **高级分析**: 添加代码复杂度、依赖分析等功能
-3. **可视化界面**: 提供更丰富的可视化界面
-4. **性能优化**: 优化大型项目的处理性能
-5. **插件系统**: 支持第三方插件扩展功能
+The server will use this configuration to:
+- Create project-specific endpoints (e.g., `http://localhost:5642/my-project/sse`)
+- Provide project information to AI assistants
+- Use a dedicated port for each project
+- Isolate project services from other running instances
 
-## 贡献指南
+### Example Configurations
 
-1. Fork 项目
-2. 创建功能分支
-3. 提交更改
-4. 创建 Pull Request
+1. Backend API Project:
+```json
+{
+    "projectName": "BackendAPI",
+    "description": "Node.js REST API with TypeScript",
+    "path": "/backend-api",
+    "port": 5643
+}
+```
 
-## 许可证
+2. Frontend Web App:
+```json
+{
+    "projectName": "FrontendApp",
+    "description": "React frontend application",
+    "path": "/frontend-app",
+    "port": 5644
+}
+```
 
-MIT License 
+### Port Configuration
+
+Each project should specify its own unique port to avoid conflicts when multiple VS Code instances are running:
+
+- The `port` field in `bifrost.config.json` determines which port the server will use
+- If no port is specified, it defaults to 8008 for backwards compatibility
+- Choose different ports for different projects to ensure they can run simultaneously
+- The server will fail to start if the configured port is already in use, requiring you to either:
+  - Free up the port
+  - Change the port in the config
+  - Close the other VS Code instance using that port
+
+### Connecting to Project-Specific Endpoints
+
+Update your AI assistant configuration to use the project-specific endpoint and port:
+
+```json
+{
+  "mcpServers": {
+    "BackendAPI": {
+      "url": "http://localhost:5643/backend-api/sse"
+    },
+    "FrontendApp": {
+      "url": "http://localhost:5644/frontend-app/sse"
+    }
+  }
+}
+```
+
+### Backwards Compatibility
+
+If no `bifrost.config.json` is present, the server will use the default configuration:
+- Port: 8008
+- SSE endpoint: `http://localhost:8008/sse`
+- Message endpoint: `http://localhost:8008/message`
+
+This maintains compatibility with existing configurations and tools.
+
+## Available Tools
+
+The extension provides access to many VSCode language features including:
+
+* **find\_usages**: Locate all symbol references.
+* **go\_to\_definition**: Jump to symbol definitions instantly.
+* **find\_implementations**: Discover implementations of interfaces/abstract methods.
+* **get\_hover\_info**: Get rich symbol docs on hover.
+* **get\_document\_symbols**: Outline all symbols in a file.
+* **get\_completions**: Context-aware auto-completions.
+* **get\_signature\_help**: Function parameter hints and overloads.
+* **get\_rename\_locations**: Safely get location of places to perform a rename across the project.
+* **rename**: Perform rename on a symbol
+* **get\_code\_actions**: Quick fixes, refactors, and improvements.
+* **get\_semantic\_tokens**: Enhanced highlighting data.
+* **get\_call\_hierarchy**: See incoming/outgoing call relationships.
+* **get\_type\_hierarchy**: Visualize class and interface inheritance.
+* **get\_code\_lens**: Inline insights (references, tests, etc.).
+* **get\_selection\_range**: Smart selection expansion for code blocks.
+* **get\_type\_definition**: Jump to underlying type definitions.
+* **get\_declaration**: Navigate to symbol declarations.
+* **get\_document\_highlights**: Highlight all occurrences of a symbol.
+* **get\_workspace\_symbols**: Search symbols across your entire workspace.
+
+## Requirements
+
+- Visual Studio Code version 1.93.0 or higher
+- Appropriate language extensions for the languages you want to work with (e.g., C# extension for C# files)
+
+### Available Commands
+
+- `Bifrost MCP: Start Server` - Manually start the MCP server on port 8008
+- `Bifrost MCP: Start Server on port` - Manually start the MCP server on specified port
+- `Bifrost MCP: Stop Server` - Stop the running MCP server
+- `Bifrost MCP: Open Debug Panel` - Open the debug panel to test available tools
+
+![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/commands.png)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=biegehydra/BifrostMCP&type=Date)](https://star-history.com/#biegehydra/BifrostMCP&Date)
+
+## Example Tool Usage
+
+### Find References
+```json
+{
+  "name": "find_usages",
+  "arguments": {
+    "textDocument": {
+      "uri": "file:///path/to/your/file"
+    },
+    "position": {
+      "line": 10,
+      "character": 15
+    },
+    "context": {
+      "includeDeclaration": true
+    }
+  }
+}
+```
+
+### Workspace Symbol Search
+```json
+{
+  "name": "get_workspace_symbols",
+  "arguments": {
+    "query": "MyClass"
+  }
+}
+```
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Ensure you have the appropriate language extensions installed for your project
+2. Check that your project has loaded correctly in VSCode
+3. Verify that port 8008 is available on your system
+4. Check the VSCode output panel for any error messages
+
+## Contributing
+Here are [Vscodes commands](https://github.com/microsoft/vscode-docs/blob/main/api/references/commands.md?plain=1) if you want to add additional functionality go ahead. I think we still need rename and a few others.
+Please feel free to submit issues or pull requests to the [GitHub repository](https://github.com/biegehydra/csharplangmcpserver).
+
+`vsce package`
+
+## Debugging
+Use the `MCP: Open Debug Panel` command
+![image](https://raw.githubusercontent.com/biegehydra/BifrostMCP/refs/heads/master/src/images/debug_panel.png)
+
+## License
+
+This extension is licensed under the APGL-3.0 License.

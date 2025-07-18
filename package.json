@@ -1,13 +1,13 @@
 {
-  "name": "source-navigator",
-  "displayName": "Source Navigator - VSCode MCP Server",
-  "description": "一个基于 VSCode 语言服务器的 MCP 服务器，提供代码导航和分析功能",
-  "version": "0.1.0",
-  "publisher": "source-navigator",
+  "name": "bifrost-mcp",
+  "displayName": "Bifrost - VSCode Dev Tools MCP Server",
+  "description": "An MCP server that exposes features of VSCode dev tools to the MCP clients",
+  "version": "0.0.13",
+  "publisher": "ConnorHallman",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/source-navigator"
+    "url": "https://github.com/biegehydra/csharplangmcpserver"
   },
   "engines": {
     "vscode": "^1.93.0"
@@ -18,11 +18,11 @@
     "Language Packs"
   ],
   "keywords": [
+    "C#",
     "MCP",
+    "dotnet",
     "AI",
-    "代码导航",
-    "语言服务器",
-    "代码分析"
+    "find references"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -31,20 +31,20 @@
   "contributes": {
     "commands": [
       {
-        "command": "source-navigator.startServer",
-        "title": "Source Navigator: 启动服务器"
+        "command": "bifrost-mcp.startServer",
+        "title": "Bifrost MCP: Start Server"
       },
       {
-        "command": "source-navigator.startServerOnPort",
-        "title": "Source Navigator: 在指定端口启动服务器"
+        "command": "bifrost-mcp.startServerOnPort",
+        "title": "Bifrost MCP: Start Server on Port"
       },
       {
-        "command": "source-navigator.stopServer",
-        "title": "Source Navigator: 停止服务器"
+        "command": "bifrost-mcp.stopServer",
+        "title": "Bifrost MCP: Stop Server"
       },
       {
-        "command": "source-navigator.openDebugPanel",
-        "title": "Source Navigator: 打开调试面板"
+        "command": "bifrost-mcp.openDebugPanel",
+        "title": "Bifrost MCP: Open Debug Panel"
       }
     ]
   },
@@ -81,4 +81,4 @@
     "cors": "^2.8.5",
     "express": "^5.0.1"
   }
-} 
+}

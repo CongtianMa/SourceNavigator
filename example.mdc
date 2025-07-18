@@ -1,0 +1,61 @@
+---
+applyTo: '**/*.{cs,ts,js}'
+---
+
+You are in a workspace with Bifrost MCP tools enabled. Use them for code navigation, understanding, and modification. Follow these guidelines:
+
+# General Guidelines
+- Use Bifrost semantic tools first for code navigation, symbol search, and refactoring.
+- Only use full-text search if Bifrost tools are unavailable or inconclusive. Inform the user if you fall back to text search.
+- Always use get_document_symbols to find exact symbol positions before using other tools.
+- For external or ambiguous symbols, results may be absent or point to cache/decompiled sources.
+
+# Common Workflows
+- To find a symbol: use get_workspace_symbols.
+- To find usages: use get_document_symbols to locate the symbol, then find_usages.
+- To explore code: use get_document_symbols, then get_hover_info, then go_to_definition or find_implementations.
+- To understand APIs: use get_hover_info, then get_signature_help, then find_usages.
+- To trace implementations: use get_workspace_symbols, then find_implementations, then find_usages.
+- For method modification: use find_usages for callers, get_hover_info for contracts.
+- For interface changes: use find_implementations, then get_rename_locations, and verify with get_document_highlights.
+- For type refactoring: use get_type_definition, then find_usages, then find_implementations.
+
+# Tool Usage
+- Use sequential tool combinations for complex tasks.
+- Always check result context, especially with similar symbol names or dense files.
+- For interface/abstract class analysis, use find_implementations (not text search).
+- Cache get_document_symbols output for large files if performing multiple operations.
+- Always position the cursor at the start of the symbol name (not modifiers or types). Use 0-based output from get_document_symbols and convert to 1-based input for other tools.
+
+# Fallback and Error Handling
+- If a symbol is not found:
+  - Check spelling, casing, and file/project context.
+  - Inform the user of the semantic search failure and ask for confirmation.
+  - If still not found, inform the user and use full-text search as a last resort.
+  - If the symbol remains unfound, report this and await user guidance.
+
+# Tool Reference
+- get_workspace_symbols: Find symbols by name across the workspace.
+- get_document_symbols: Get a hierarchical list of all symbols in a file.
+- find_usages: Find all usages of a symbol.
+- go_to_definition: Navigate to a symbol’s original definition.
+- find_implementations: Find all concrete implementations of interfaces or abstract classes/methods.
+- get_hover_info: Get type, signature, and documentation for a symbol.
+- get_signature_help: Get function/method parameter info as you type.
+- get_rename_locations: Find all locations to update when renaming a symbol.
+- rename: Rename a symbol.
+- get_type_definition: Find underlying type definitions.
+- get_declaration: Find where a symbol is declared.
+- get_document_highlights: Highlight all occurrences of a symbol in a document.
+
+# Positioning Rules
+- Always use get_document_symbols to get the exact 0-based line/character for the symbol.
+- All Bifrost MCP tools expect and use 0-based coordinates.
+- Place the cursor at the start of the symbol name (not on modifiers, types, or whitespace).
+- In inheritance lists, the start of the base class/interface name is the correct position.
+- If a tool fails due to positioning, verify that you are using 0-based coordinates as returned by get_document_symbols.
+
+# Why a tool could fail
+- Positioning at modifiers (e.g., public).
+- Off-by-one errors (targeting whitespace).
+- Positioning at types instead of names.

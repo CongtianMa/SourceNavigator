@@ -1,54 +1,58 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
 
-// 项目配置接口
-export interface SourceNavigatorConfig {
+export interface BifrostConfig {
     projectName: string;
     description: string;
     path: string;
     port: number;
 }
 
-// 默认配置
-export const DEFAULT_CONFIG: SourceNavigatorConfig = {
-    projectName: "SourceNavigator",
-    description: "基于 VSCode 语言服务器的 MCP 服务器",
-    path: "/source-navigator",
-    port: 8009
+export const DEFAULT_CONFIG: BifrostConfig = {
+    projectName: "language-tools",
+    description: "Language tools and code analysis",
+    path: "",  // Empty path for backwards compatibility
+    port: 8008 // Default port for backwards compatibility
 };
 
-// 查找项目配置文件
-export async function findSourceNavigatorConfig(workspaceFolder: vscode.WorkspaceFolder): Promise<SourceNavigatorConfig> {
-    const configPath = path.join(workspaceFolder.uri.fsPath, 'source-navigator.config.json');
+export async function findBifrostConfig(workspaceFolder: vscode.WorkspaceFolder): Promise<BifrostConfig> {
+    const configPath = path.join(workspaceFolder.uri.fsPath, 'bifrost.config.json');
     
     try {
-        const configData = await fs.promises.readFile(configPath, 'utf8');
-        const config = JSON.parse(configData) as Partial<SourceNavigatorConfig>;
+        // Check if config file exists and read it
+        const configFile = await vscode.workspace.fs.readFile(vscode.Uri.file(configPath));
+        const configContent = Buffer.from(configFile).toString('utf8');
+        const config: BifrostConfig = JSON.parse(configContent);
         
-        // 合并默认配置和用户配置
+        // Validate config
+        if (!config.projectName || !config.description || config.path === undefined) {
+            throw new Error('Invalid bifrost.config.json: missing required fields');
+        }
+
+        // Use default port if not specified
+        if (config.port === undefined) {
+            config.port = DEFAULT_CONFIG.port;
+        }
+        
         return {
-            ...DEFAULT_CONFIG,
-            ...config,
-            projectName: config.projectName || workspaceFolder.name,
-            description: config.description || `项目: ${workspaceFolder.name}`,
-            path: config.path || `/${workspaceFolder.name.toLowerCase().replace(/\s+/g, '-')}`,
-            port: config.port || DEFAULT_CONFIG.port
+            projectName: config.projectName,
+            description: config.description,
+            path: config.path,
+            port: config.port
         };
     } catch (error) {
-        // 如果配置文件不存在，使用默认配置
-        console.log(`未找到配置文件 ${configPath}，使用默认配置`);
-        return {
-            ...DEFAULT_CONFIG,
-            projectName: workspaceFolder.name,
-            description: `项目: ${workspaceFolder.name}`,
-            path: `/${workspaceFolder.name.toLowerCase().replace(/\s+/g, '-')}`,
-            port: DEFAULT_CONFIG.port
-        };
+        console.log(`No valid bifrost.config.json found in ${workspaceFolder.name}, using default config`);
+        return DEFAULT_CONFIG;
     }
 }
 
-// 获取项目基础路径
-export function getProjectBasePath(config: SourceNavigatorConfig): string {
-    return config.path;
+export function getProjectBasePath(config: BifrostConfig): string {
+    // For backwards compatibility, if path is empty, return empty string (root path)
+    if (!config.path) {
+        return '';
+    }
+    if (!config.path.startsWith('/')) {
+        config.path = '/' + config.path;
+    }
+    return `${config.path}`;
 } 
