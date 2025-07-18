@@ -42,10 +42,10 @@ This VS Code extension provides a Model Context Protocol (MCP) server that offer
 
 The extension will automatically start an MCP server when activated. To configure an AI assistant to use this server:
 
-1. The server runs on port 8008 by default (configurable with `source-navigator.config.json`)
+1. The server runs on port 8009 by default (configurable with `source-navigator.config.json`)
 2. Configure your MCP-compatible AI assistant to connect to:
-   - SSE endpoint: `http://localhost:8008/sse`
-   - Message endpoint: `http://localhost:8008/message`
+   - SSE endpoint: `http://localhost:8009/sse`
+   - Message endpoint: `http://localhost:8009/message`
 
 ### LLM Rules
 I have also provided sample rules that can be used in .cursorrules files for better results.
@@ -71,7 +71,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
         "-y",
         "supergateway",
         "--sse",
-        "http://localhost:8008/sse"
+        "http://localhost:8009/sse"
       ],
       "disabled": false,
       "autoApprove": [],
@@ -91,7 +91,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
         "-y",
         "supergateway",
         "--sse",
-        "http://localhost:8008/sse"
+        "http://localhost:8009/sse"
       ],
       "disabled": false,
       "autoApprove": [],
@@ -107,7 +107,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
 {
   "mcpServers": {
     "SourceNavigator": {
-      "url": "http://localhost:8008/sse"
+      "url": "http://localhost:8009/sse"
     }
   }
 }
@@ -122,7 +122,7 @@ Follow this video to install and use with cursor
 {
   "mcpServers": {
     "SourceNavigator": {
-      "url": "http://localhost:8008/sse"
+      "url": "http://localhost:8009/sse"
     }
   }
 }
@@ -178,7 +178,7 @@ The server will use this configuration to:
 Each project should specify its own unique port to avoid conflicts when multiple VS Code instances are running:
 
 - The `port` field in `source-navigator.config.json` determines which port the server will use
-- If no port is specified, it defaults to 8008 for backwards compatibility
+- If no port is specified, it defaults to 8009 for backwards compatibility
 - Choose different ports for different projects to ensure they can run simultaneously
 - The server will fail to start if the configured port is already in use, requiring you to either:
   - Free up the port
@@ -205,9 +205,9 @@ Update your AI assistant configuration to use the project-specific endpoint and 
 ### Backwards Compatibility
 
 If no `source-navigator.config.json` is present, the server will use the default configuration:
-- Port: 8008
-- SSE endpoint: `http://localhost:8008/sse`
-- Message endpoint: `http://localhost:8008/message`
+- Port: 8009
+- SSE endpoint: `http://localhost:8009/sse`
+- Message endpoint: `http://localhost:8009/message`
 
 This maintains compatibility with existing configurations and tools.
 
@@ -225,7 +225,7 @@ The extension provides intelligent code analysis and navigation tools:
 
 ### Available Commands
 
-- `SourceNavigator: Start Server` - Manually start the MCP server on port 8008
+- `SourceNavigator: Start Server` - Manually start the MCP server on port 8009
 - `SourceNavigator: Start Server on Port` - Manually start the MCP server on specified port
 - `SourceNavigator: Stop Server` - Stop the running MCP server
 - `SourceNavigator: Open Debug Panel` - Open the debug panel to test available tools
@@ -267,7 +267,7 @@ If you encounter issues:
 
 1. Ensure you have the appropriate language extensions installed for your project
 2. Check that your project has loaded correctly in VSCode
-3. Verify that port 8008 is available on your system
+3. Verify that port 8009 is available on your system
 4. Check the VSCode output panel for any error messages
 
 ## Contributing
