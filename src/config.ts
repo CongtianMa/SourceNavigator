@@ -12,7 +12,7 @@ export const DEFAULT_CONFIG: SourceNavigatorConfig = {
     projectName: "language-tools",
     description: "Language tools and code analysis",
     path: "",  // Empty path for backwards compatibility
-    port: 8009 // Default port for backwards compatibility
+    port: 8010 // Default port for backwards compatibility
 };
 
 export async function findSourceNavigatorConfig(workspaceFolder: vscode.WorkspaceFolder): Promise<SourceNavigatorConfig> {

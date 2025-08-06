@@ -45,4 +45,41 @@ const extensionConfig = {
     level: "log", // enables logging required for problem matchers
   },
 };
-module.exports = [ extensionConfig ];
+
+/** @type WebpackConfig */
+const mcpServerConfig = {
+  target: 'node', // MCP服务器进程运行在Node.js环境中
+  mode: 'none', // 保持源代码尽可能接近原始状态
+
+  entry: './src/mcpServerProcess.ts', // MCP服务器进程的入口点
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'mcpServerProcess.js',
+    libraryTarget: 'commonjs2'
+  },
+  externals: {
+    // 排除不能被webpack打包的模块
+  },
+  resolve: {
+    extensions: ['.ts', '.js']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'ts-loader'
+          }
+        ]
+      }
+    ]
+  },
+  devtool: 'nosources-source-map',
+  infrastructureLogging: {
+    level: "log",
+  },
+};
+
+module.exports = [ extensionConfig, mcpServerConfig ];

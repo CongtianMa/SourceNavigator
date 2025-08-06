@@ -79,6 +79,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "cors": "^2.8.5",
-    "express": "^5.0.1"
+    "express": "^5.0.1",
+    "node-ipc": "^10.0.0"
   }
 }
