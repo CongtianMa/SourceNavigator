@@ -87,7 +87,7 @@ export const mcpTools = [
                 },
                 workspace_path: {
                     type: "string",
-                    description: "Optional workspace path for multi-window routing. If not specified, uses the default workspace."
+                    description: "当前工作区的绝对路径，请尽量携带，否则可能无法找到类"
                 }
             },
             required: ["class_name"]

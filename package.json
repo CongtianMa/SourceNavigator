@@ -38,10 +38,6 @@
       {
         "command": "source-navigator.stopServer",
         "title": "SourceNavigator: Stop Server"
-      },
-      {
-        "command": "source-navigator.openDebugPanel",
-        "title": "SourceNavigator: Open Debug Panel"
       }
     ],
     "configuration": {

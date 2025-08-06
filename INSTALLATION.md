@@ -66,8 +66,7 @@ code --install-extension source-navigator-0.0.13.vsix
 插件提供以下VSCode命令：
 
 - `SourceNavigator: Start Server` - 启动MCP服务器
-- `SourceNavigator: Stop Server` - 停止MCP服务器  
-- `SourceNavigator: Open Debug Panel` - 打开调试面板
+- `SourceNavigator: Stop Server` - 停止MCP服务器
 
 ## 🔧 配置
 
@@ -102,7 +101,6 @@ code --install-extension source-navigator-0.0.13.vsix
 
 1. 打开VSCode开发者工具: `Help > Toggle Developer Tools`
 2. 查看Console面板中的日志信息
-3. 使用`SourceNavigator: Open Debug Panel`命令查看详细状态
 
 ## 📝 更新日志
 

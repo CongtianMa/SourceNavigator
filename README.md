@@ -256,10 +256,8 @@ The extension provides intelligent code analysis and navigation tools:
 
 ### Available Commands
 
-- `SourceNavigator: Start Server` - Manually start the MCP server on port 8009
-- `SourceNavigator: Start Server on Port` - Manually start the MCP server on specified port
+- `SourceNavigator: Start Server` - Manually start the MCP server
 - `SourceNavigator: Stop Server` - Stop the running MCP server
-- `SourceNavigator: Open Debug Panel` - Open the debug panel to test available tools
 
 ![image](https://raw.githubusercontent.com/macongtian/SourceNavigator/refs/heads/master/src/images/commands.png)
 
@@ -307,8 +305,7 @@ This project is based on the original Bifrost MCP server but has been significan
 `vsce package`
 
 ## Debugging
-Use the `MCP: Open Debug Panel` command
-![image](https://raw.githubusercontent.com/macongtian/SourceNavigator/refs/heads/master/src/images/debug_panel.png)
+Check the VSCode Developer Console for debugging information.
 
 ## License
 

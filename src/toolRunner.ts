@@ -192,25 +192,22 @@ async function handleClassSource(args: any): Promise<any> {
             "result": "未找到类 " + className,
         };
     }
-    const isQualifiedName = className.includes(".");
+
     const filteredSymbols = symbols.filter(symbol => {
         return symbol.kind === vscode.SymbolKind.Class || symbol.kind === vscode.SymbolKind.Interface || symbol.kind === vscode.SymbolKind.Enum || symbol.kind === vscode.SymbolKind.Struct;
     }).filter(symbol => {
-        if (isQualifiedName) {
-            return symbol.containerName+"."+symbol.name === className;
-        } else {
-            return symbol.name === className;
-        }
+        return symbol.name === className || (symbol.containerName && symbol.containerName+"."+symbol.name === className);
     });
     if (filteredSymbols.length === 0) {
         return {
             "result": "未找到类 " + className,
         };
     }
-    if (!isQualifiedName && filteredSymbols.length > 1) {
+    const qualifiedNames = new Set(filteredSymbols.map(symbol => symbol.containerName + "." + symbol.name));
+    if (qualifiedNames.size > 1) {
         return {
             "result": "找到多个类 " + className,
-            "sameNameClass": Array.from(new Set(filteredSymbols.map(symbol => symbol.containerName + "." + symbol.name)))
+            "sameNameClass": Array.from(qualifiedNames)
         };
     }
     const symbol = filteredSymbols[0];

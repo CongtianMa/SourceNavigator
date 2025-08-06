@@ -69,8 +69,6 @@ src/
 ├── config.ts                 ✅ 配置管理
 ├── tools.ts                  ✅ 工具定义
 ├── toolRunner.ts             ✅ 工具执行器
-├── debugPanel.ts             ✅ 调试面板
-├── webview.ts                ✅ WebView组件
 └── helpers.ts                ✅ 辅助函数
 ```
 

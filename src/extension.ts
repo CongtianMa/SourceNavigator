@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { createDebugPanel } from './debugPanel';
 import { getGlobalConfig } from './config';
 import { sharedServerManager } from './sharedServerManager';
 import { sharedIpcClient } from './sharedIpcClient';
@@ -16,13 +15,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 初始注册到共享服务器
     await registerToSharedServer();
-
-    // 注册调试面板命令
-    context.subscriptions.push(
-        vscode.commands.registerCommand('source-navigator.openDebugPanel', () => {
-            createDebugPanel(context);
-        })
-    );
 
     // 注册命令
     context.subscriptions.push(
@@ -89,26 +81,17 @@ export async function activate(context: vscode.ExtensionContext) {
             console.log(`[Extension] 注册成功: ${workspaceName}`);
             
             // 显示成功消息
-            vscode.window.showInformationMessage(
-                `SourceNavigator已连接: ${workspaceName}`, 
-                '查看状态'
-            ).then(selection => {
-                if (selection === '查看状态') {
-                    vscode.commands.executeCommand('source-navigator.openDebugPanel');
-                }
-            });
+            vscode.window.showInformationMessage(`SourceNavigator已连接: ${workspaceName}`);
             
         } catch (error) {
             console.error('[Extension] 注册失败:', error);
             const errorMsg = error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(
                 `SourceNavigator连接失败: ${errorMsg}`, 
-                '重试', '查看详情'
+                '重试'
             ).then(selection => {
                 if (selection === '重试') {
                     registerToSharedServer();
-                } else if (selection === '查看详情') {
-                    vscode.commands.executeCommand('source-navigator.openDebugPanel');
                 }
             });
         }
