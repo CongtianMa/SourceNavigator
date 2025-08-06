@@ -35,6 +35,8 @@ let httpServer: HttpServer | undefined;
 const registeredClients = new Map<string, ClientRegistration>();
 const ipcClients = new Map<string, any>(); // IPC客户端连接映射
 const serverPort = parseInt(process.env.SERVER_PORT || '8010');
+let shutdownTimer: NodeJS.Timeout | undefined; // 延迟关闭定时器
+const shutdownDelay = 30000; // 30秒延迟关闭时间
 
 // 配置IPC服务器
 ipc.config.id = 'sharedMcpServerProcess';
@@ -341,10 +343,49 @@ async function startHttpServer(): Promise<void> {
 }
 
 /**
+ * 计划延迟关闭
+ */
+function scheduleDelayedShutdown(): void {
+    // 取消之前的定时器
+    if (shutdownTimer) {
+        clearTimeout(shutdownTimer);
+    }
+
+    // 设置新的延迟关闭定时器
+    shutdownTimer = setTimeout(async () => {
+        // 再次检查是否还有客户端（防止在延迟期间有新客户端连接）
+        if (registeredClients.size === 0) {
+            console.log('[Shared MCP Server] 延迟关闭时间到，停止服务器');
+            await stopServer();
+            process.exit(0);
+        } else {
+            console.log('[Shared MCP Server] 延迟关闭期间有新客户端连接，取消关闭');
+        }
+        shutdownTimer = undefined;
+    }, shutdownDelay);
+
+    console.log(`[Shared MCP Server] 已设置延迟关闭定时器，${shutdownDelay / 1000}秒后执行`);
+}
+
+/**
+ * 取消延迟关闭
+ */
+function cancelDelayedShutdown(): void {
+    if (shutdownTimer) {
+        console.log('[Shared MCP Server] 取消延迟关闭定时器');
+        clearTimeout(shutdownTimer);
+        shutdownTimer = undefined;
+    }
+}
+
+/**
  * 停止服务器
  */
 async function stopServer(): Promise<void> {
     console.log('[Shared MCP Server] 正在停止服务器...');
+    
+    // 取消延迟关闭定时器
+    cancelDelayedShutdown();
     
     if (mcpServer) {
         mcpServer.close();
@@ -378,6 +419,12 @@ ipc.serve(() => {
             // 存储socket的客户端ID，用于后续识别
             socket.id = data.clientId;
             
+            // 取消延迟关闭定时器（有新客户端连接）
+            if (shutdownTimer) {
+                console.log('[Shared MCP Server] 有新客户端连接，取消延迟关闭');
+                cancelDelayedShutdown();
+            }
+            
             ipc.server.emit(socket, 'register-response', { success: true });
             
             console.log(`[Shared MCP Server] 客户端注册成功，当前客户端数: ${registeredClients.size}`);
@@ -402,14 +449,10 @@ ipc.serve(() => {
             
             ipc.server.emit(socket, 'unregister-response', { success: true });
             
-            // 如果没有客户端了，停止服务器
+            // 如果没有客户端了，启动延迟关闭
             if (registeredClients.size === 0) {
-                console.log('[Shared MCP Server] 所有客户端已断开，准备停止服务器...');
-                setTimeout(() => {
-                    stopServer().then(() => {
-                        process.exit(0);
-                    });
-                }, 1000); // 延迟1秒停止，确保响应发送完成
+                console.log(`[Shared MCP Server] 所有客户端已断开，将在${shutdownDelay / 1000}秒后关闭服务器`);
+                scheduleDelayedShutdown();
             }
             
             console.log(`[Shared MCP Server] 当前客户端数: ${registeredClients.size}`);
@@ -466,14 +509,10 @@ ipc.serve(() => {
         
         console.log(`[Shared MCP Server] 当前客户端数: ${registeredClients.size}`);
         
-        // 如果没有客户端了，停止服务器
+        // 如果没有客户端了，启动延迟关闭
         if (registeredClients.size === 0) {
-            console.log('[Shared MCP Server] 所有客户端已断开，准备停止服务器...');
-            setTimeout(() => {
-                stopServer().then(() => {
-                    process.exit(0);
-                });
-            }, 2000); // 延迟2秒停止
+            console.log(`[Shared MCP Server] 所有客户端已断开，将在${shutdownDelay / 1000}秒后关闭服务器`);
+            scheduleDelayedShutdown();
         }
     });
 });
@@ -591,6 +630,7 @@ startServer().catch((error) => {
 // 处理进程退出
 process.on('SIGINT', async () => {
     console.log('[Shared MCP Server] 收到SIGINT信号，正在关闭...');
+    cancelDelayedShutdown();
     cleanupServerLockFile();
     await stopServer();
     process.exit(0);
@@ -598,12 +638,14 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
     console.log('[Shared MCP Server] 收到SIGTERM信号，正在关闭...');
+    cancelDelayedShutdown();
     cleanupServerLockFile();
     await stopServer();
     process.exit(0);
 });
 
 process.on('exit', () => {
+    cancelDelayedShutdown();
     cleanupServerLockFile();
 });
 

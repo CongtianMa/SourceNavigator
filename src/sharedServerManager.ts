@@ -194,9 +194,10 @@ export class SharedServerManager {
             // 获取当前全局配置
             const globalConfig = getGlobalConfig();
             
-            // 启动子进程
+            // 启动独立的子进程
             this.serverProcess = spawn('node', [serverScriptPath], {
-                stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+                detached: true,           // 创建独立的进程组
+                stdio: ['ignore', 'ignore', 'ignore'], // 不使用标准输入输出
                 cwd: extensionPath,
                 env: {
                     ...process.env,
@@ -204,6 +205,9 @@ export class SharedServerManager {
                     SERVER_PORT: globalConfig.port.toString()
                 }
             });
+            
+            // 取消对子进程的引用，让它独立运行
+            this.serverProcess.unref();
 
             // 设置进程事件监听器
             this.setupServerProcessEventHandlers();
@@ -227,42 +231,23 @@ export class SharedServerManager {
     }
 
     /**
-     * 停止共享服务器
+     * 停止共享服务器（注意：独立进程通常不需要手动停止）
      */
     private async stopSharedServer(): Promise<void> {
-        if (!this.isStarted || !this.serverProcess) {
+        if (!this.isStarted) {
             return;
         }
 
-        console.log('[Shared Server] 停止共享MCP服务器...');
+        console.log('[Shared Server] 请求停止独立MCP服务器...');
 
         try {
-            // 优雅停止
-            if (!this.serverProcess.killed) {
-                this.serverProcess.kill('SIGTERM');
-            }
-
-            // 等待进程退出
-            await new Promise<void>((resolve) => {
-                if (this.serverProcess) {
-                    this.serverProcess.on('exit', () => resolve());
-                    // 强制超时
-                    setTimeout(() => {
-                        if (this.serverProcess && !this.serverProcess.killed) {
-                            this.serverProcess.kill('SIGKILL');
-                        }
-                        resolve();
-                    }, 5000);
-                } else {
-                    resolve();
-                }
-            });
-
+            // 对于独立进程，我们主要是清理本地状态
+            // 服务器进程会在没有客户端连接时自动退出
             await this.cleanup();
-            console.log('[Shared Server] 共享MCP服务器已停止');
+            console.log('[Shared Server] 本地状态已清理，独立服务器将继续运行');
 
         } catch (error) {
-            console.error('[Shared Server] 停止共享服务器失败:', error);
+            console.error('[Shared Server] 清理本地状态失败:', error);
             await this.forceCleanup();
         }
     }
@@ -416,7 +401,7 @@ export class SharedServerManager {
     }
 
     /**
-     * 设置服务器进程事件监听器
+     * 设置服务器进程事件监听器（仅监听进程状态，不处理输出）
      */
     private setupServerProcessEventHandlers(): void {
         if (!this.serverProcess) {
@@ -424,25 +409,19 @@ export class SharedServerManager {
         }
 
         this.serverProcess.on('exit', (code, signal) => {
-            console.log(`[Shared Server] 服务器进程退出，代码: ${code}，信号: ${signal}`);
+            console.log(`[Shared Server] 独立服务器进程退出，代码: ${code}，信号: ${signal}`);
             this.isStarted = false;
             this.cleanup();
         });
 
         this.serverProcess.on('error', (error) => {
-            console.error('[Shared Server] 服务器进程错误:', error);
+            console.error('[Shared Server] 服务器进程启动错误:', error);
             this.isStarted = false;
             this.cleanup();
         });
 
-        // 监听子进程输出
-        this.serverProcess.stdout?.on('data', (data) => {
-            console.log(`[Shared Server Process]: ${data.toString()}`);
-        });
-
-        this.serverProcess.stderr?.on('data', (data) => {
-            console.error(`[Shared Server Process Error]: ${data.toString()}`);
-        });
+        // 注意：由于使用detached + stdio: 'ignore'，我们不监听stdout/stderr
+        // 服务器进程将完全独立运行，通过HTTP/IPC进行通信
     }
 
     /**
@@ -464,36 +443,66 @@ export class SharedServerManager {
     }
 
     /**
-     * 等待服务器准备就绪
+     * 等待服务器准备就绪（通过HTTP健康检查）
      */
     private async waitForServerReady(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.serverProcess) {
-                reject(new Error('服务器进程未启动'));
+        const serverPort = getGlobalConfig().port;
+        const maxAttempts = 30; // 最多尝试30次
+        const delayMs = 500;    // 每次间隔500ms
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                console.log(`[Shared Server] 检查服务器状态 (${attempt}/${maxAttempts})...`);
+                
+                // 使用HTTP健康检查
+                await this.checkServerHealth(serverPort);
+                
+                console.log(`[Shared Server] 服务器启动成功，响应正常`);
                 return;
-            }
-
-            const timeout = setTimeout(() => {
-                reject(new Error('等待共享服务器启动超时'));
-            }, 15000);
-
-            const onData = (data: Buffer) => {
-                const output = data.toString();
-                if (output.includes('共享MCP服务器已启动') || output.includes('服务器启动成功')) {
-                    clearTimeout(timeout);
-                    this.serverProcess?.stdout?.off('data', onData);
-                    resolve();
+                
+            } catch (error) {
+                if (attempt === maxAttempts) {
+                    throw new Error(`等待服务器启动超时，尝试了${maxAttempts}次`);
                 }
+                
+                // 等待后重试
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+    }
+    
+    /**
+     * 检查服务器健康状态
+     */
+    private async checkServerHealth(port: number): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const http = require('http');
+            const options = {
+                hostname: 'localhost',
+                port: port,
+                path: '/health',
+                method: 'GET',
+                timeout: 2000
             };
 
-            const onError = (error: Error) => {
-                clearTimeout(timeout);
-                this.serverProcess?.off('error', onError);
-                reject(error);
-            };
-
-            this.serverProcess.stdout?.on('data', onData);
-            this.serverProcess.on('error', onError);
+            const req = http.request(options, (res: any) => {
+                if (res.statusCode === 200) {
+                    resolve();
+                } else {
+                    reject(new Error(`服务器响应异常: ${res.statusCode}`));
+                }
+            });
+            
+            req.on('error', (err: any) => {
+                reject(err);
+            });
+            
+            req.on('timeout', () => {
+                req.destroy();
+                reject(new Error('健康检查超时'));
+            });
+            
+            req.end();
         });
     }
 
@@ -522,15 +531,13 @@ export class SharedServerManager {
     }
 
     /**
-     * 强制清理资源
+     * 强制清理资源（独立进程不需要强制终止）
      */
     private async forceCleanup(): Promise<void> {
-        console.log('[Shared Server] 强制清理资源...');
+        console.log('[Shared Server] 强制清理本地资源...');
 
-        if (this.serverProcess && !this.serverProcess.killed) {
-            this.serverProcess.kill('SIGKILL');
-        }
-
+        // 对于独立进程，我们只清理本地状态，不强制终止服务器
+        // 服务器进程会在适当的时候自然退出
         await this.cleanup();
     }
 }
