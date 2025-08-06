@@ -63,13 +63,18 @@ export const mcpTools = [
         "- Checking class inheritance and members\n"+
         "- Verifying type imports\n\n"+
         "Suggestions:\n"+
-        "- Use fully qualified names (e.g., 'MyNamespace.MyType') for more precise results\n",
+        "- Use fully qualified names (e.g., 'MyNamespace.MyType') for more precise results\n"+
+        "- In multi-window environments, specify workspace_path to target specific workspace\n",
         inputSchema: {
             type: "object",
             properties: {
                 name: {
                     type: "string",
                     description: "The name of the type to find, it is recommended to use fully qualified names for more precise results"
+                },
+                workspace_path: {
+                    type: "string",
+                    description: "Optional workspace path for multi-window routing. If not specified, uses the default workspace."
                 }
             },
             required: ["name"]
@@ -87,7 +92,8 @@ export const mcpTools = [
         "Suggestions:\n"+
         "- For large files, it is recommended to specify a line range to improve efficiency\n"+
         "- Small files or when explicitly requested by the user, the entire file can be read\n"+
-        "- Supports relative paths, absolute paths, and URI formats",
+        "- Supports relative paths, absolute paths, and URI formats\n"+
+        "- In multi-window environments, specify workspace_path to target specific workspace\n",
         inputSchema: {
             type: "object",
             properties: {
@@ -106,6 +112,10 @@ export const mcpTools = [
                 end_line_one_indexed_inclusive: {
                     type: "integer",
                     description: "Required when should_read_entire_file is false. The line number to end reading (inclusive of this line)"
+                },
+                workspace_path: {
+                    type: "string",
+                    description: "Optional workspace path for multi-window routing. If not specified, uses the default workspace."
                 }
             },
             required: ["target_file"]

@@ -51,7 +51,7 @@ const mcpServerConfig = {
   target: 'node', // MCP服务器进程运行在Node.js环境中
   mode: 'none', // 保持源代码尽可能接近原始状态
 
-  entry: './src/mcpServerProcess.ts', // MCP服务器进程的入口点
+  entry: './src/mcpServerProcess.ts', // 原有的MCP服务器进程的入口点
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'mcpServerProcess.js',
@@ -82,4 +82,40 @@ const mcpServerConfig = {
   },
 };
 
-module.exports = [ extensionConfig, mcpServerConfig ];
+/** @type WebpackConfig */
+const sharedMcpServerConfig = {
+  target: 'node', // 共享MCP服务器进程运行在Node.js环境中
+  mode: 'none', // 保持源代码尽可能接近原始状态
+
+  entry: './src/sharedMcpServerProcess.ts', // 共享MCP服务器进程的入口点
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'sharedMcpServerProcess.js',
+    libraryTarget: 'commonjs2'
+  },
+  externals: {
+    // 排除不能被webpack打包的模块
+  },
+  resolve: {
+    extensions: ['.ts', '.js']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'ts-loader'
+          }
+        ]
+      }
+    ]
+  },
+  devtool: 'nosources-source-map',
+  infrastructureLogging: {
+    level: "log",
+  },
+};
+
+module.exports = [ extensionConfig, mcpServerConfig, sharedMcpServerConfig ];
