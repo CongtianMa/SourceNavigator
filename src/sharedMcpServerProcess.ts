@@ -427,6 +427,9 @@ ipc.serve(() => {
             
             ipc.server.emit(socket, 'register-response', { success: true });
             
+            // 更新锁文件中的客户端信息
+            updateLockFileClients();
+            
             console.log(`[Shared MCP Server] 客户端注册成功，当前客户端数: ${registeredClients.size}`);
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
@@ -448,6 +451,9 @@ ipc.serve(() => {
             }
             
             ipc.server.emit(socket, 'unregister-response', { success: true });
+            
+            // 更新锁文件中的客户端信息
+            updateLockFileClients();
             
             // 如果没有客户端了，启动延迟关闭
             if (registeredClients.size === 0) {
@@ -507,6 +513,9 @@ ipc.serve(() => {
             }
         }
         
+        // 更新锁文件中的客户端信息
+        updateLockFileClients();
+        
         console.log(`[Shared MCP Server] 当前客户端数: ${registeredClients.size}`);
         
         // 如果没有客户端了，启动延迟关闭
@@ -561,17 +570,48 @@ function createServerLockFile(): void {
     
     const lockFilePath = path.join(os.tmpdir(), 'source-navigator-server.lock');
     const lockData = {
-        pid: process.pid,
+        serverPid: process.pid,
         port: serverPort,
         startTime: Date.now(),
-        serverType: 'shared-mcp-server'
+        serverType: 'shared-mcp-server',
+        isDetached: true,
+        clients: [] // 初始为空，通过IPC更新
     };
 
     try {
         fs.writeFileSync(lockFilePath, JSON.stringify(lockData, null, 2));
-        console.log(`[Shared MCP Server] 创建锁文件: ${lockFilePath}`);
+        console.log(`[Shared MCP Server] 创建锁文件: ${lockFilePath}, PID: ${process.pid}`);
     } catch (error) {
         console.warn('[Shared MCP Server] 创建锁文件失败:', error);
+    }
+}
+
+/**
+ * 更新锁文件中的客户端信息
+ */
+function updateLockFileClients(): void {
+    const os = require('os');
+    const path = require('path');
+    const fs = require('fs');
+    
+    const lockFilePath = path.join(os.tmpdir(), 'source-navigator-server.lock');
+    
+    try {
+        if (fs.existsSync(lockFilePath)) {
+            const lockData = JSON.parse(fs.readFileSync(lockFilePath, 'utf8'));
+            lockData.clients = Array.from(registeredClients.values()).map(client => ({
+                clientId: client.clientId,
+                workspaceName: client.workspaceName,
+                workspacePath: client.workspacePath,
+                pid: client.pid
+            }));
+            lockData.lastUpdate = Date.now();
+            
+            fs.writeFileSync(lockFilePath, JSON.stringify(lockData, null, 2));
+            console.log(`[Shared MCP Server] 锁文件已更新，客户端数: ${lockData.clients.length}`);
+        }
+    } catch (error) {
+        console.warn('[Shared MCP Server] 更新锁文件失败:', error);
     }
 }
 

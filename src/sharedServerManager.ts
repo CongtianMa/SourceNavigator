@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
 import { getGlobalConfig } from './config';
 
 /**
@@ -26,10 +24,8 @@ export class SharedServerManager {
     private isStarted = false;
     private isExternalServer = false; // 标记是否是外部已存在的服务器
     private registeredClients = new Map<string, ClientRegistration>();
-    private readonly lockFilePath: string;
 
     private constructor() {
-        this.lockFilePath = path.join(os.tmpdir(), 'source-navigator-server.lock');
         this.setupProcessEventHandlers();
     }
 
@@ -51,11 +47,6 @@ export class SharedServerManager {
         
         // 注册客户端
         this.registeredClients.set(registration.clientId, registration);
-        
-        // 更新锁文件（只有在我们启动了服务器时才更新）
-        if (!this.isExternalServer) {
-            this.updateLockFile();
-        }
         
         console.log(`[Shared Server] 客户端注册完成，当前客户端数: ${this.registeredClients.size}`);
     }
@@ -81,15 +72,15 @@ export class SharedServerManager {
         console.log(`[Shared Server] 检查是否存在运行中的共享服务器...`);
         
         try {
-            // 首先尝试连接现有服务器
-            await this.checkExistingServer();
+            // 尝试连接现有服务器（仅通过HTTP健康检查）
+            await this.checkServerHealth(getGlobalConfig().port);
             this.isExternalServer = true;
             this.isStarted = true;
             console.log(`[Shared Server] 成功连接到现有共享服务器`);
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
             console.log(`[Shared Server] 未发现现有服务器：${errorMsg}`);
-            console.log(`[Shared Server] 启动新的共享服务器...`);
+            console.log(`[Shared Server] 启动新的独立服务器...`);
             
             // 启动新的服务器
             await this.startSharedServer();
@@ -107,16 +98,9 @@ export class SharedServerManager {
             this.registeredClients.delete(clientId);
         }
 
-        // 如果没有客户端了，并且是我们启动的服务器，则停止它
-        if (this.registeredClients.size === 0 && !this.isExternalServer) {
-            console.log(`[Shared Server] 所有客户端已注销，停止服务器`);
-            await this.stopSharedServer();
-        } else if (!this.isExternalServer) {
-            // 更新锁文件（仅当是我们的服务器时）
-            this.updateLockFile();
-        } else {
-            console.log(`[Shared Server] 客户端已注销，但保留外部服务器运行`);
-        }
+        // 对于独立进程，我们不主动停止服务器
+        // 服务器进程会通过IPC检测客户端连接状态，并在适当时候自动退出
+        console.log(`[Shared Server] 客户端已注销，当前客户端数: ${this.registeredClients.size}`);
     }
 
     /**
@@ -146,15 +130,22 @@ export class SharedServerManager {
     }
 
     /**
-     * 检查服务器是否正在运行
+     * 检查服务器是否正在运行（通过HTTP健康检查）
      */
-    isServerRunning(): boolean {
-        if (this.isExternalServer) {
-            // 对于外部服务器，只检查状态标志
-            return this.isStarted;
-        } else {
-            // 对于本进程启动的服务器，检查进程状态
-            return this.isStarted && !!this.serverProcess && !this.serverProcess.killed;
+    async isServerRunning(): Promise<boolean> {
+        if (!this.isStarted) {
+            return false;
+        }
+
+        try {
+            // 使用HTTP健康检查来验证服务器实际状态
+            await this.checkServerHealth(getGlobalConfig().port);
+            return true;
+        } catch (error) {
+            // 如果健康检查失败，更新状态
+            console.log('[Shared Server] 服务器健康检查失败，更新状态为未运行');
+            this.isStarted = false;
+            return false;
         }
     }
 
@@ -176,16 +167,7 @@ export class SharedServerManager {
         this.isStarting = true;
 
         try {
-            console.log('[Shared Server] 启动共享MCP服务器...');
-
-            // 检查端口是否被占用（如果被占用，此方法会抛出异常或检查现有服务器）
-            try {
-                await this.checkPortAvailability();
-            } catch (error) {
-                const errorMsg = error instanceof Error ? error.message : String(error);
-                console.log(`[Shared Server] 端口检查失败: ${errorMsg}`);
-                throw error;
-            }
+            console.log('[Shared Server] 启动独立MCP服务器进程...');
 
             // 获取扩展路径
             const extensionPath = this.getExtensionPath();
@@ -216,7 +198,8 @@ export class SharedServerManager {
             await this.waitForServerReady();
 
             this.isStarted = true;
-            console.log(`[Shared Server] 共享MCP服务器启动成功，端口: ${globalConfig.port}`);
+            
+            console.log(`[Shared Server] 独立MCP服务器启动成功，端口: ${globalConfig.port}`);
             
             // 通知所有VSCode窗口
             vscode.window.showInformationMessage(`共享MCP服务器已启动，端口: ${globalConfig.port}`);
@@ -252,142 +235,7 @@ export class SharedServerManager {
         }
     }
 
-    /**
-     * 检查端口可用性
-     */
-    private async checkPortAvailability(): Promise<void> {
-        const net = require('net');
-        const serverPort = getGlobalConfig().port;
-        
-        return new Promise((resolve, reject) => {
-            const server = net.createServer();
-            
-            server.listen(serverPort, () => {
-                server.close(() => resolve());
-            });
-            
-            server.on('error', (error: any) => {
-                if (error.code === 'EADDRINUSE') {
-                    // 端口被占用，检查是否是我们自己的服务器
-                    this.checkExistingServer()
-                        .then(() => {
-                            // 是我们的服务器，设置为外部服务器状态
-                            this.isExternalServer = true;
-                            this.isStarted = true;
-                            console.log('[Shared Server] 检测到现有共享服务器，标记为外部服务器');
-                            resolve();
-                        })
-                        .catch((checkError) => {
-                            const errorMsg = checkError instanceof Error ? checkError.message : String(checkError);
-                            reject(new Error(`端口 ${serverPort} 已被其他进程占用: ${errorMsg}`));
-                        });
-                } else {
-                    reject(error);
-                }
-            });
-        });
-    }
 
-    /**
-     * 检查现有服务器
-     */
-    private async checkExistingServer(): Promise<void> {
-        console.log('[Shared Server] 开始检查现有服务器...');
-        
-        const serverPort = getGlobalConfig().port;
-        
-        // 首先尝试直接连接HTTP端点（更可靠的方法）
-        try {
-            const http = require('http');
-            const options = {
-                hostname: 'localhost',
-                port: serverPort,
-                path: '/health',
-                method: 'GET',
-                timeout: 3000
-            };
-
-            await new Promise<void>((resolve, reject) => {
-                const req = http.request(options, (res: any) => {
-                    if (res.statusCode === 200) {
-                        console.log('[Shared Server] HTTP健康检查通过，发现现有服务器');
-                        resolve();
-                    } else {
-                        reject(new Error(`服务器响应异常: ${res.statusCode}`));
-                    }
-                });
-                
-                req.on('error', (err: any) => {
-                    console.log(`[Shared Server] HTTP连接失败: ${err.message}`);
-                    reject(err);
-                });
-                req.on('timeout', () => {
-                    console.log('[Shared Server] HTTP连接超时');
-                    reject(new Error('连接超时'));
-                });
-                req.end();
-            });
-            
-            console.log('[Shared Server] 通过HTTP检测到现有的共享服务器');
-            return;
-            
-        } catch (httpError) {
-            const errorMsg = httpError instanceof Error ? httpError.message : String(httpError);
-            console.log(`[Shared Server] HTTP检查失败: ${errorMsg}`);
-        }
-        
-        // HTTP检查失败，尝试检查锁文件
-        try {
-            if (fs.existsSync(this.lockFilePath)) {
-                console.log('[Shared Server] 发现锁文件，检查进程状态...');
-                const lockData = JSON.parse(fs.readFileSync(this.lockFilePath, 'utf8'));
-                
-                // 检查进程是否还在运行
-                try {
-                    process.kill(lockData.pid, 0); // 检查进程是否存在
-                    console.log(`[Shared Server] 锁文件进程 ${lockData.pid} 仍在运行，但HTTP不可访问`);
-                    
-                    // 进程存在但HTTP不可访问，可能服务器正在启动
-                    throw new Error('服务器进程存在但不可访问');
-                    
-                } catch (processError) {
-                    // 进程不存在，清理锁文件
-                    console.log(`[Shared Server] 锁文件进程已不存在，清理锁文件`);
-                    fs.unlinkSync(this.lockFilePath);
-                    throw new Error('锁文件进程已不存在');
-                }
-            } else {
-                console.log('[Shared Server] 未找到锁文件');
-                throw new Error('未找到锁文件');
-            }
-        } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            console.log(`[Shared Server] 检查现有服务器失败: ${errorMsg}`);
-            throw new Error(`检查现有服务器失败: ${errorMsg}`);
-        }
-    }
-
-    /**
-     * 更新锁文件
-     */
-    private updateLockFile(): void {
-        const lockData = {
-            pid: process.pid,
-            port: getGlobalConfig().port,
-            startTime: Date.now(),
-            clients: Array.from(this.registeredClients.values()).map(client => ({
-                clientId: client.clientId,
-                workspaceName: client.workspaceName,
-                workspacePath: client.workspacePath
-            }))
-        };
-
-        try {
-            fs.writeFileSync(this.lockFilePath, JSON.stringify(lockData, null, 2));
-        } catch (error) {
-            console.warn('[Shared Server] 更新锁文件失败:', error);
-        }
-    }
 
     /**
      * 获取扩展路径
@@ -401,27 +249,24 @@ export class SharedServerManager {
     }
 
     /**
-     * 设置服务器进程事件监听器（仅监听进程状态，不处理输出）
+     * 设置服务器进程事件监听器（独立进程模式下最小化监听）
      */
     private setupServerProcessEventHandlers(): void {
         if (!this.serverProcess) {
             return;
         }
 
-        this.serverProcess.on('exit', (code, signal) => {
-            console.log(`[Shared Server] 独立服务器进程退出，代码: ${code}，信号: ${signal}`);
-            this.isStarted = false;
-            this.cleanup();
-        });
-
+        // 只监听启动错误，不监听exit事件（因为独立进程退出是正常的）
         this.serverProcess.on('error', (error) => {
             console.error('[Shared Server] 服务器进程启动错误:', error);
             this.isStarted = false;
             this.cleanup();
         });
 
-        // 注意：由于使用detached + stdio: 'ignore'，我们不监听stdout/stderr
-        // 服务器进程将完全独立运行，通过HTTP/IPC进行通信
+        // 注意：
+        // 1. 不监听 'exit' 事件，因为独立进程的退出不应该影响管理器状态
+        // 2. 服务器状态通过HTTP健康检查来验证
+        // 3. 进程通过detached + unref完全独立运行
     }
 
     /**
@@ -510,7 +355,7 @@ export class SharedServerManager {
      * 清理资源
      */
     private async cleanup(): Promise<void> {
-        console.log('[Shared Server] 清理资源...');
+        console.log('[Shared Server] 清理本地资源...');
 
         this.isStarted = false;
         this.isStarting = false;
@@ -518,15 +363,6 @@ export class SharedServerManager {
         if (this.serverProcess) {
             this.serverProcess.removeAllListeners();
             this.serverProcess = undefined;
-        }
-
-        // 清理锁文件
-        try {
-            if (fs.existsSync(this.lockFilePath)) {
-                fs.unlinkSync(this.lockFilePath);
-            }
-        } catch (error) {
-            console.warn('[Shared Server] 清理锁文件失败:', error);
         }
     }
 
