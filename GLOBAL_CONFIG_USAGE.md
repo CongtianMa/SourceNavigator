@@ -2,7 +2,7 @@
 
 ## 概述
 
-SourceNavigator 现在支持使用全局配置来统一管理共享服务器的端口和路径设置，而不需要在每个项目中单独配置这些参数。
+SourceNavigator 现在采用简化的全局配置方式，使用共享服务器架构，不再需要项目特定的配置文件。
 
 ## 配置方法
 
@@ -12,7 +12,6 @@ SourceNavigator 现在支持使用全局配置来统一管理共享服务器的�
 2. 搜索 "SourceNavigator"
 3. 配置以下选项：
    - **SourceNavigator: Port**: 共享MCP服务器端口号 (默认: 8010)
-   - **SourceNavigator: Path**: 服务器路径前缀 (默认: "")
 
 ### 方法2：通过 settings.json 文件
 
@@ -20,8 +19,7 @@ SourceNavigator 现在支持使用全局配置来统一管理共享服务器的�
 
 ```json
 {
-  "sourceNavigator.port": 8010,
-  "sourceNavigator.path": ""
+  "sourceNavigator.port": 8010
 }
 ```
 
@@ -36,32 +34,17 @@ SourceNavigator 现在支持使用全局配置来统一管理共享服务器的�
   "sourceNavigator.port": 9000
   ```
 
-### sourceNavigator.path
-- **类型**: 字符串
-- **默认值**: ""
-- **描述**: 服务器路径前缀，如果需要在特定路径下提供服务
-- **示例**: 
-  ```json
-  "sourceNavigator.path": "/api/mcp"
-  ```
-
 ## 工作原理
 
-1. **全局优先**: 系统首先读取全局VSCode设置中的配置
-2. **项目配置简化**: `source-navigator.config.json` 文件现在只需要配置项目特定的信息：
-   ```json
-   {
-     "projectName": "my-project",
-     "description": "我的项目描述"
-   }
-   ```
-3. **自动合并**: 系统会自动将全局配置的端口和路径与项目配置合并
+1. **共享服务器**: 使用全局唯一的共享MCP服务器实例
+2. **自动检测**: 系统自动从VSCode工作区获取项目信息
+3. **无配置文件**: 不再需要项目特定的配置文件
 
 ## 迁移指南
 
-如果您之前在项目的 `source-navigator.config.json` 文件中配置了端口和路径：
+如果您之前使用了项目配置文件：
 
-**之前的配置**:
+**之前的配置文件 (`source-navigator.config.json`)**:
 ```json
 {
   "projectName": "my-project",
@@ -76,25 +59,21 @@ SourceNavigator 现在支持使用全局配置来统一管理共享服务器的�
 1. VSCode 全局设置:
    ```json
    {
-     "sourceNavigator.port": 8010,
-     "sourceNavigator.path": ""
+     "sourceNavigator.port": 8010
    }
    ```
 
-2. 项目配置文件:
-   ```json
-   {
-     "projectName": "my-project",
-     "description": "我的项目描述"
-   }
-   ```
+2. 删除项目配置文件:
+   - 可以安全删除所有 `source-navigator.config.json` 文件
+   - 项目信息现在自动从VSCode工作区获取
 
 ## 优势
 
-1. **统一管理**: 所有项目使用相同的端口和路径配置
-2. **简化配置**: 项目配置文件更简洁，只关注项目特定信息
+1. **零配置**: 无需创建和维护项目配置文件
+2. **统一管理**: 所有项目使用相同的端口配置
 3. **共享服务器**: 支持多个VSCode窗口共享同一个MCP服务器实例
-4. **动态更新**: 修改全局配置后，重启扩展即可生效
+4. **自动化**: 项目信息自动从VSCode工作区获取
+5. **简化维护**: 减少配置文件管理的复杂性
 
 ## 注意事项
 

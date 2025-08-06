@@ -45,18 +45,16 @@ The extension will automatically start a shared MCP server when activated. To co
 
 #### Global Configuration (Recommended)
 
-Configure the server port and path globally in VSCode settings:
+Configure the server port globally in VSCode settings:
 
 1. Open VSCode Settings (Ctrl/Cmd + ,)
 2. Search for "SourceNavigator"
 3. Set **SourceNavigator: Port** (default: 8010)
-4. Set **SourceNavigator: Path** (optional path prefix)
 
 Or add to your `settings.json`:
 ```json
 {
-  "sourceNavigator.port": 8010,
-  "sourceNavigator.path": ""
+  "sourceNavigator.port": 8010
 }
 ```
 
@@ -68,25 +66,15 @@ Configure your MCP-compatible AI assistant to connect to:
 
 ## Global Configuration
 
-SourceNavigator now supports global configuration to unify the management of shared server port and path settings. This eliminates the need to configure these parameters separately for each project.
+SourceNavigator now uses a simplified global configuration approach. The shared server architecture eliminates the need for project-specific configuration files.
 
 ### Configuration Options
 
 - **sourceNavigator.port**: Port number for the shared MCP server (default: 8010)
-- **sourceNavigator.path**: Server path prefix (default: "")
 
-### Project Configuration
+### No Project Configuration Required
 
-Project-specific configuration files (`source-navigator.config.json`) now only need to contain project-specific information:
-
-```json
-{
-  "projectName": "my-project",
-  "description": "Project description"
-}
-```
-
-The global port and path settings will be automatically applied to all projects.
+Project-specific configuration files (`source-navigator.config.json`) are no longer needed. The extension automatically detects workspace information from VSCode.
 
 For detailed configuration instructions, see [GLOBAL_CONFIG_USAGE.md](GLOBAL_CONFIG_USAGE.md).
 

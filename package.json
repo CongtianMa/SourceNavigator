@@ -36,10 +36,6 @@
         "title": "SourceNavigator: Start Server"
       },
       {
-        "command": "source-navigator.startServerOnPort",
-        "title": "SourceNavigator: Start Server on Port"
-      },
-      {
         "command": "source-navigator.stopServer",
         "title": "SourceNavigator: Stop Server"
       },
@@ -55,11 +51,6 @@
           "type": "number",
           "default": 8010,
           "description": "共享MCP服务器端口号"
-        },
-        "sourceNavigator.path": {
-          "type": "string",
-          "default": "",
-          "description": "服务器路径前缀（如果需要的话）"
         }
       }
     }

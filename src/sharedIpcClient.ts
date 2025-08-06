@@ -1,6 +1,6 @@
 const { default: ipc } = require('node-ipc');
 import { runTool } from './toolRunner';
-import { SourceNavigatorConfig } from './config';
+// 移除不再需要的配置导入
 
 /**
  * 客户端注册信息
@@ -9,7 +9,6 @@ export interface ClientRegistration {
     workspacePath: string;
     workspaceName: string;
     clientId: string;
-    config: SourceNavigatorConfig;
     pid: number;
 }
 
@@ -160,7 +159,7 @@ export class SharedIpcClient {
     /**
      * 注册客户端到共享服务器
      */
-    async registerToSharedServer(config: SourceNavigatorConfig, workspacePath: string, workspaceName: string): Promise<void> {
+    async registerToSharedServer(workspacePath: string, workspaceName: string): Promise<void> {
         if (!this.isConnected) {
             await this.connect();
         }
@@ -169,7 +168,6 @@ export class SharedIpcClient {
             workspacePath,
             workspaceName,
             clientId: ipc.config.id,
-            config,
             pid: process.pid
         };
 

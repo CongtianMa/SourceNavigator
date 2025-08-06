@@ -18,7 +18,6 @@ interface ClientRegistration {
     workspacePath: string;
     workspaceName: string;
     clientId: string;
-    config: any;
     pid: number;
 }
 

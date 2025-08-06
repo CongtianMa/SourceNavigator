@@ -3,7 +3,7 @@ import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { SourceNavigatorConfig, getGlobalConfig } from './config';
+import { getGlobalConfig } from './config';
 
 /**
  * 客户端注册信息
@@ -12,7 +12,6 @@ export interface ClientRegistration {
     workspacePath: string;
     workspaceName: string;
     clientId: string;
-    config: SourceNavigatorConfig;
     pid: number; // VSCode进程ID，用于检测窗口关闭
 }
 

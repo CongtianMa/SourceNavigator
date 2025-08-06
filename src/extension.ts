@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
 import { createDebugPanel } from './debugPanel';
-import { findSourceNavigatorConfig, SourceNavigatorConfig } from './config';
+import { getGlobalConfig } from './config';
 import { sharedServerManager } from './sharedServerManager';
 import { sharedIpcClient } from './sharedIpcClient';
 
 export async function activate(context: vscode.ExtensionContext) {
-    let currentConfig: SourceNavigatorConfig | null = null;
     let isRegistered = false;
 
     // 处理工作区文件夹变化
@@ -30,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('source-navigator.startServer', async () => {
             try {
                 if (isRegistered) {
-                    vscode.window.showInformationMessage(`SourceNavigator已运行: ${currentConfig?.projectName || 'unknown'}`);
+                    vscode.window.showInformationMessage(`SourceNavigator已运行`);
                     return;
                 }
                 await registerToSharedServer();
@@ -72,10 +71,6 @@ export async function activate(context: vscode.ExtensionContext) {
             const workspaceFolder = workspaceFolders[0];
             const workspacePath = workspaceFolder.uri.fsPath;
             const workspaceName = workspaceFolder.name;
-
-            // 查找配置文件
-            const config = await findSourceNavigatorConfig(workspaceFolder);
-            currentConfig = config!;
             
             console.log(`[Extension] 注册到共享MCP服务器: ${workspaceName}`);
 
@@ -84,12 +79,11 @@ export async function activate(context: vscode.ExtensionContext) {
                 workspacePath,
                 workspaceName,
                 clientId: sharedIpcClient.clientId,
-                config: currentConfig,
                 pid: process.pid
             });
 
             // 建立IPC连接并注册客户端
-            await sharedIpcClient.registerToSharedServer(currentConfig, workspacePath, workspaceName);
+            await sharedIpcClient.registerToSharedServer(workspacePath, workspaceName);
             
             isRegistered = true;
             console.log(`[Extension] 注册成功: ${workspaceName}`);
