@@ -47,7 +47,22 @@
         "command": "source-navigator.openDebugPanel",
         "title": "SourceNavigator: Open Debug Panel"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "SourceNavigator",
+      "properties": {
+        "sourceNavigator.port": {
+          "type": "number",
+          "default": 8010,
+          "description": "共享MCP服务器端口号"
+        },
+        "sourceNavigator.path": {
+          "type": "string",
+          "default": "",
+          "description": "服务器路径前缀（如果需要的话）"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

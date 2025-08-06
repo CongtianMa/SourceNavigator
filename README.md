@@ -12,6 +12,7 @@ This VS Code extension provides a Model Context Protocol (MCP) server that offer
 ## Table of Contents
 - [Features](#features)
 - [Installation/Usage](#usage)
+- [Global Configuration](#global-configuration)
 - [Multi-Project Support](#multiple-project-support)
 - [Available Tools](#available-tools)
 - [Installation](#installation)
@@ -40,12 +41,54 @@ This VS Code extension provides a Model Context Protocol (MCP) server that offer
 
 ### Configuration
 
-The extension will automatically start an MCP server when activated. To configure an AI assistant to use this server:
+The extension will automatically start a shared MCP server when activated. To configure an AI assistant to use this server:
 
-1. The server runs on port 8009 by default (configurable with `source-navigator.config.json`)
-2. Configure your MCP-compatible AI assistant to connect to:
-   - SSE endpoint: `http://localhost:8009/sse`
-   - Message endpoint: `http://localhost:8009/message`
+#### Global Configuration (Recommended)
+
+Configure the server port and path globally in VSCode settings:
+
+1. Open VSCode Settings (Ctrl/Cmd + ,)
+2. Search for "SourceNavigator"
+3. Set **SourceNavigator: Port** (default: 8010)
+4. Set **SourceNavigator: Path** (optional path prefix)
+
+Or add to your `settings.json`:
+```json
+{
+  "sourceNavigator.port": 8010,
+  "sourceNavigator.path": ""
+}
+```
+
+#### AI Assistant Connection
+
+Configure your MCP-compatible AI assistant to connect to:
+- SSE endpoint: `http://localhost:8010/sse` (or your configured port)
+- Message endpoint: `http://localhost:8010/message`
+
+## Global Configuration
+
+SourceNavigator now supports global configuration to unify the management of shared server port and path settings. This eliminates the need to configure these parameters separately for each project.
+
+### Configuration Options
+
+- **sourceNavigator.port**: Port number for the shared MCP server (default: 8010)
+- **sourceNavigator.path**: Server path prefix (default: "")
+
+### Project Configuration
+
+Project-specific configuration files (`source-navigator.config.json`) now only need to contain project-specific information:
+
+```json
+{
+  "projectName": "my-project",
+  "description": "Project description"
+}
+```
+
+The global port and path settings will be automatically applied to all projects.
+
+For detailed configuration instructions, see [GLOBAL_CONFIG_USAGE.md](GLOBAL_CONFIG_USAGE.md).
 
 ### LLM Rules
 I have also provided sample rules that can be used in .cursorrules files for better results.
@@ -71,7 +114,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
         "-y",
         "supergateway",
         "--sse",
-        "http://localhost:8009/sse"
+        "http://localhost:8010/sse"
       ],
       "disabled": false,
       "autoApprove": [],
@@ -91,7 +134,7 @@ I have also provided sample rules that can be used in .cursorrules files for bet
         "-y",
         "supergateway",
         "--sse",
-        "http://localhost:8009/sse"
+        "http://localhost:8010/sse"
       ],
       "disabled": false,
       "autoApprove": [],

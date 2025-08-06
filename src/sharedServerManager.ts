@@ -3,7 +3,7 @@ import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { SourceNavigatorConfig } from './config';
+import { SourceNavigatorConfig, getGlobalConfig } from './config';
 
 /**
  * 客户端注册信息
@@ -28,7 +28,6 @@ export class SharedServerManager {
     private isExternalServer = false; // 标记是否是外部已存在的服务器
     private registeredClients = new Map<string, ClientRegistration>();
     private readonly lockFilePath: string;
-    private readonly serverPort = 8010; // 固定端口
 
     private constructor() {
         this.lockFilePath = path.join(os.tmpdir(), 'source-navigator-server.lock');
@@ -164,7 +163,7 @@ export class SharedServerManager {
      * 获取服务器端口
      */
     getServerPort(): number {
-        return this.serverPort;
+        return getGlobalConfig().port;
     }
 
     /**
@@ -193,6 +192,9 @@ export class SharedServerManager {
             const extensionPath = this.getExtensionPath();
             const serverScriptPath = path.join(extensionPath, 'dist', 'sharedMcpServerProcess.js');
 
+            // 获取当前全局配置
+            const globalConfig = getGlobalConfig();
+            
             // 启动子进程
             this.serverProcess = spawn('node', [serverScriptPath], {
                 stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
@@ -200,7 +202,7 @@ export class SharedServerManager {
                 env: {
                     ...process.env,
                     NODE_ENV: 'production',
-                    SERVER_PORT: this.serverPort.toString()
+                    SERVER_PORT: globalConfig.port.toString()
                 }
             });
 
@@ -211,10 +213,10 @@ export class SharedServerManager {
             await this.waitForServerReady();
 
             this.isStarted = true;
-            console.log(`[Shared Server] 共享MCP服务器启动成功，端口: ${this.serverPort}`);
+            console.log(`[Shared Server] 共享MCP服务器启动成功，端口: ${globalConfig.port}`);
             
             // 通知所有VSCode窗口
-            vscode.window.showInformationMessage(`共享MCP服务器已启动，端口: ${this.serverPort}`);
+            vscode.window.showInformationMessage(`共享MCP服务器已启动，端口: ${globalConfig.port}`);
 
         } catch (error) {
             console.error('[Shared Server] 启动共享服务器失败:', error);
@@ -271,11 +273,12 @@ export class SharedServerManager {
      */
     private async checkPortAvailability(): Promise<void> {
         const net = require('net');
+        const serverPort = getGlobalConfig().port;
         
         return new Promise((resolve, reject) => {
             const server = net.createServer();
             
-            server.listen(this.serverPort, () => {
+            server.listen(serverPort, () => {
                 server.close(() => resolve());
             });
             
@@ -292,7 +295,7 @@ export class SharedServerManager {
                         })
                         .catch((checkError) => {
                             const errorMsg = checkError instanceof Error ? checkError.message : String(checkError);
-                            reject(new Error(`端口 ${this.serverPort} 已被其他进程占用: ${errorMsg}`));
+                            reject(new Error(`端口 ${serverPort} 已被其他进程占用: ${errorMsg}`));
                         });
                 } else {
                     reject(error);
@@ -307,12 +310,14 @@ export class SharedServerManager {
     private async checkExistingServer(): Promise<void> {
         console.log('[Shared Server] 开始检查现有服务器...');
         
+        const serverPort = getGlobalConfig().port;
+        
         // 首先尝试直接连接HTTP端点（更可靠的方法）
         try {
             const http = require('http');
             const options = {
                 hostname: 'localhost',
-                port: this.serverPort,
+                port: serverPort,
                 path: '/health',
                 method: 'GET',
                 timeout: 3000
@@ -384,7 +389,7 @@ export class SharedServerManager {
     private updateLockFile(): void {
         const lockData = {
             pid: process.pid,
-            port: this.serverPort,
+            port: getGlobalConfig().port,
             startTime: Date.now(),
             clients: Array.from(this.registeredClients.values()).map(client => ({
                 clientId: client.clientId,
@@ -415,7 +420,9 @@ export class SharedServerManager {
      * 设置服务器进程事件监听器
      */
     private setupServerProcessEventHandlers(): void {
-        if (!this.serverProcess) return;
+        if (!this.serverProcess) {
+            return;
+        }
 
         this.serverProcess.on('exit', (code, signal) => {
             console.log(`[Shared Server] 服务器进程退出，代码: ${code}，信号: ${signal}`);
