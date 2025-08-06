@@ -2,4 +2,9 @@ out
 dist
 node_modules
 .vscode-test/
-*.vsix 
+*.vsix
+
+# 测试相关的临时文件
+tests/**/*.log
+tests/**/*.tmp
+/tmp/source-navigator-server.lock 
