@@ -30,7 +30,6 @@ interface ToolCallRequest {
 }
 
 // 全局变量
-let mcpServer: Server | undefined;
 let httpServer: HttpServer | undefined;
 const registeredClients = new Map<string, ClientRegistration>();
 const ipcClients = new Map<string, any>(); // IPC客户端连接映射
@@ -44,69 +43,12 @@ ipc.config.retry = 1500;
 ipc.config.silent = true;
 
 /**
- * 初始化共享MCP服务器
+ * 初始化共享MCP服务器（现在只需要启动HTTP服务器）
  */
 async function initializeSharedMcpServer(): Promise<void> {
     console.log('[Shared MCP Server] 初始化共享MCP服务器...');
     
-    // 创建MCP服务器实例
-    mcpServer = new Server(
-        {
-            name: "shared-source-navigator",
-            version: "0.1.0",
-            description: "共享的源码导航MCP服务器，支持多窗口工作区"
-        },
-        {
-            capabilities: {
-                tools: {},
-                resources: {},
-            }
-        }
-    );
-
-    // 设置工具处理器
-    mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
-        tools: mcpTools
-    }));
-
-    mcpServer.setRequestHandler(ListResourcesRequestSchema, async () => ({
-        resources: []
-    }));
-
-    mcpServer.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
-        templates: []
-    }));
-
-    // 设置工具调用处理器 - 支持workspace路由
-    mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
-        try {
-            const { name, arguments: args } = request.params;
-            
-            console.log(`[Shared MCP Server] 处理工具调用: ${name}`);
-            
-            // 提取workspace路径用于路由
-            const workspacePath = args?.workspace_path;
-            
-            // 路由到相应的客户端
-            const result = await routeToolCallToClient({
-                requestId: Date.now().toString(),
-                toolName: name,
-                args: args || {},
-                workspacePath: workspacePath as string | undefined
-            });
-            
-            return { content: [{ type: "text", text: JSON.stringify(result) }] };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`[Shared MCP Server] 工具调用错误:`, errorMessage);
-            return {
-                content: [{ type: "text", text: `Error: ${errorMessage}` }],
-                isError: true,
-            };
-        }
-    });
-
-    // 启动HTTP服务器
+    // 直接启动HTTP服务器，MCP服务器实例在SSE连接时按需创建
     await startHttpServer();
 }
 
@@ -222,16 +164,14 @@ function sendToolCallToClient(clientId: string, request: ToolCallRequest): Promi
  * 启动HTTP服务器
  */
 async function startHttpServer(): Promise<void> {
-    if (!mcpServer) {
-        throw new Error('MCP服务器未初始化');
-    }
 
     const app = express();
     app.use(cors());
     app.use(express.json());
 
-    // 跟踪活动的传输连接
-    const transports: { [sessionId: string]: SSEServerTransport } = {};
+    // 跟踪活动的传输连接 - 修复：使用Map来更好地管理连接
+    const transports = new Map<string, SSEServerTransport>();
+    const transportServers = new Map<string, Server>(); // 为每个连接创建独立的服务器实例
 
     // SSE端点
     app.get('/sse', async (req: Request, res: Response) => {
@@ -244,7 +184,67 @@ async function startHttpServer(): Promise<void> {
         try {
             const transport = new SSEServerTransport('/message', res);
             const sessionId = transport.sessionId;
-            transports[sessionId] = transport;
+            
+            // 为这个会话创建独立的MCP服务器实例
+            const sessionServer = new Server(
+                {
+                    name: "shared-source-navigator",
+                    version: "0.1.0",
+                    description: "共享的源码导航MCP服务器，支持多窗口工作区"
+                },
+                {
+                    capabilities: {
+                        tools: {},
+                        resources: {},
+                    }
+                }
+            );
+
+            // 为会话服务器设置处理器
+            sessionServer.setRequestHandler(ListToolsRequestSchema, async () => ({
+                tools: mcpTools
+            }));
+
+            sessionServer.setRequestHandler(ListResourcesRequestSchema, async () => ({
+                resources: []
+            }));
+
+            sessionServer.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
+                templates: []
+            }));
+
+            // 设置工具调用处理器 - 支持workspace路由
+            sessionServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+                try {
+                    const { name, arguments: args } = request.params;
+                    
+                    console.log(`[Shared MCP Server] 处理工具调用: ${name} (会话: ${sessionId})`);
+                    
+                    // 提取workspace路径用于路由
+                    const workspacePath = args?.workspace_path;
+                    
+                    // 路由到相应的客户端
+                    const result = await routeToolCallToClient({
+                        requestId: `${sessionId}-${Date.now()}`, // 添加会话ID前缀
+                        toolName: name,
+                        args: args || {},
+                        workspacePath: workspacePath as string | undefined
+                    });
+                    
+                    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.error(`[Shared MCP Server] 工具调用错误 (会话: ${sessionId}):`, errorMessage);
+                    return {
+                        content: [{ type: "text", text: `Error: ${errorMessage}` }],
+                        isError: true,
+                    };
+                }
+            });
+
+            // 存储传输连接和对应的服务器
+            transports.set(sessionId, transport);
+            transportServers.set(sessionId, sessionServer);
 
             const keepAliveInterval = setInterval(() => {
                 if (res.writable) {
@@ -252,37 +252,47 @@ async function startHttpServer(): Promise<void> {
                 }
             }, 30000);
 
-            if (mcpServer) {
-                await mcpServer.connect(transport);
-                console.log(`[Shared MCP Server] 服务器连接到SSE传输，会话ID: ${sessionId}`);
+            // 连接会话专用的服务器到传输
+            await sessionServer.connect(transport);
+            console.log(`[Shared MCP Server] 独立服务器连接到SSE传输，会话ID: ${sessionId}`);
+            
+            req.on('close', () => {
+                console.log(`[Shared MCP Server] SSE连接关闭，会话: ${sessionId}`);
+                clearInterval(keepAliveInterval);
                 
-                req.on('close', () => {
-                    console.log(`[Shared MCP Server] SSE连接关闭，会话: ${sessionId}`);
-                    clearInterval(keepAliveInterval);
-                    delete transports[sessionId];
-                    transport.close().catch(err => {
+                // 清理会话相关资源
+                const sessionTransport = transports.get(sessionId);
+                const sessionServer = transportServers.get(sessionId);
+                
+                if (sessionTransport) {
+                    sessionTransport.close().catch(err => {
                         console.error('[Shared MCP Server] 关闭传输时出错:', err);
                     });
-                });
-            } else {
-                console.error('[Shared MCP Server] MCP服务器未初始化');
-                res.status(500).end();
-                return;
-            }
+                    transports.delete(sessionId);
+                }
+                
+                if (sessionServer) {
+                    sessionServer.close();
+                    transportServers.delete(sessionId);
+                }
+                
+                console.log(`[Shared MCP Server] 会话资源已清理: ${sessionId}`);
+            });
         } catch (error) {
             console.error('[Shared MCP Server] SSE连接出错:', error);
             res.status(500).end();
         }
     });
     
-    // 消息端点
+    // 消息端点 - 修复：使用Map获取传输连接
     app.post('/message', async (req: Request, res: Response) => {
         const sessionId = req.query.sessionId as string;
         console.log(`[Shared MCP Server] 收到消息，会话: ${sessionId}，方法:`, req.body?.method);
         
-        const transport = transports[sessionId];
+        const transport = transports.get(sessionId);
         if (!transport) {
             console.error(`[Shared MCP Server] 未找到会话: ${sessionId}`);
+            console.error(`[Shared MCP Server] 当前活动会话: ${Array.from(transports.keys()).join(', ')}`);
             res.status(400).json({
                 jsonrpc: "2.0",
                 id: req.body?.id,
@@ -296,9 +306,9 @@ async function startHttpServer(): Promise<void> {
         
         try {
             await transport.handlePostMessage(req, res, req.body);
-            console.log('[Shared MCP Server] 消息处理成功');
+            console.log(`[Shared MCP Server] 消息处理成功，会话: ${sessionId}`);
         } catch (error) {
-            console.error('[Shared MCP Server] 消息处理出错:', error);
+            console.error(`[Shared MCP Server] 消息处理出错，会话: ${sessionId}:`, error);
             res.status(500).json({
                 jsonrpc: "2.0",
                 id: req.body?.id,
@@ -320,6 +330,8 @@ async function startHttpServer(): Promise<void> {
                 workspaceName: client.workspaceName,
                 workspacePath: client.workspacePath
             })),
+            activeSessions: Array.from(transports.keys()),
+            sessionCount: transports.size,
             port: serverPort
         });
     });
@@ -387,11 +399,8 @@ async function stopServer(): Promise<void> {
     // 取消延迟关闭定时器
     cancelDelayedShutdown();
     
-    if (mcpServer) {
-        mcpServer.close();
-        mcpServer = undefined;
-    }
-    
+    // 在startHttpServer作用域内定义的变量无法在这里访问
+    // 我们通过关闭HTTP服务器来间接清理所有SSE连接
     if (httpServer) {
         httpServer.close();
         httpServer = undefined;

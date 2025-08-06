@@ -216,9 +216,9 @@ async function handleClassSource(args: any): Promise<any> {
     
     return {
         "result": "已找到类 " + className,
-        "filePath": symbol.location.uri.toString(),
-        "sourceCode": sourceCode,
-        "totalLines": document.lineCount,
+        "file_path": symbol.location.uri.toString(),
+        "source_code": sourceCode,
+        "total_lines": document.lineCount,
         "summary": {
             "linesBefore": "返回内容前有"+lineOffset+"行",
             "linesAfter": "返回内容后有" + Math.max(0, document.lineCount - lineOffset - lineLimit) + "行"
