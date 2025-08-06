@@ -28,6 +28,9 @@ export const runTool = async (name: string, args: any) => {
         case "read_outer_file":
             result = await handleReadFile(args);
             break;
+        case "class_source":
+            result = await handleClassSource(args);
+            break;
         default:
             throw new Error(`Unknown tool: ${name}`);
     }
@@ -163,7 +166,7 @@ async function findSymbol(args: any) {
     if (!symbols) {
         return [];
     }
-    return await asyncMap(symbols.slice(0, 5), async (symbol: vscode.SymbolInformation) => ({
+    return await asyncMap(symbols.filter(symbol => symbol.name.includes(query)).slice(0, 5), async (symbol: vscode.SymbolInformation) => ({
         name: symbol.name,
         kind: getSymbolKindString(symbol.kind),
         is_external: await isExternalUri(symbol.location.uri),
@@ -174,4 +177,55 @@ async function findSymbol(args: any) {
 }
 
 
+
+async function handleClassSource(args: any): Promise<any> {
+    const className = args.class_name;
+    const lineOffset = args.line_offset ?? 0;
+    const lineLimit = args.line_limit ?? 500;
+
+    const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+        'vscode.executeWorkspaceSymbolProvider',
+        className
+    );
+    if (!symbols) {
+        return {
+            "result": "未找到类 " + className,
+        };
+    }
+    const isQualifiedName = className.includes(".");
+    const filteredSymbols = symbols.filter(symbol => {
+        return symbol.kind === vscode.SymbolKind.Class || symbol.kind === vscode.SymbolKind.Interface || symbol.kind === vscode.SymbolKind.Enum || symbol.kind === vscode.SymbolKind.Struct;
+    }).filter(symbol => {
+        if (isQualifiedName) {
+            return symbol.containerName+"."+symbol.name === className;
+        } else {
+            return symbol.name === className;
+        }
+    });
+    if (filteredSymbols.length === 0) {
+        return {
+            "result": "未找到类 " + className,
+        };
+    }
+    if (!isQualifiedName && filteredSymbols.length > 1) {
+        return {
+            "result": "找到多个类 " + className,
+            "sameNameClass": Array.from(new Set(filteredSymbols.map(symbol => symbol.containerName + "." + symbol.name)))
+        };
+    }
+    const symbol = filteredSymbols[0];
+    const document = await vscode.workspace.openTextDocument(symbol.location.uri);
+    const sourceCode = document.getText(new vscode.Range(lineOffset, 0, lineOffset+lineLimit, Number.MAX_VALUE));
+    
+    return {
+        "result": "已找到类 " + className,
+        "filePath": symbol.location.uri.toString(),
+        "sourceCode": sourceCode,
+        "totalLines": document.lineCount,
+        "summary": {
+            "linesBefore": "返回内容前有"+lineOffset+"行",
+            "linesAfter": "返回内容后有" + Math.max(0, document.lineCount - lineOffset - lineLimit) + "行"
+        }
+    };
+}
 
