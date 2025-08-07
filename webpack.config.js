@@ -82,6 +82,13 @@ const sharedMcpServerConfig = {
   infrastructureLogging: {
     level: "log",
   },
+  // 忽略 express 相关的警告
+  ignoreWarnings: [
+    {
+      module: /node_modules\/express/,
+      message: /Critical dependency: the request of a dependency is an expression/,
+    },
+  ],
 };
 
 module.exports = [ extensionConfig, sharedMcpServerConfig ];
