@@ -73,7 +73,7 @@ export const mcpTools = [
         inputSchema: {
             type: "object",
             properties: {
-                workspace: {
+                workspace_path: {
                     type: "string",
                     description: "当前工作区的绝对路径"
                 },
@@ -90,7 +90,7 @@ export const mcpTools = [
                     description: "可选，默认500，表示返回的源码行数"
                 }
             },
-            required: ["workspace", "class_name"]
+            required: ["workspace_path", "class_name"]
         }
     }
 ];

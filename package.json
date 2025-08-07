@@ -3,7 +3,7 @@
   "displayName": "SourceNavigator - VSCode Dev Tools MCP Server",
   "description": "An MCP server that provides intelligent code navigation and analysis tools for AI assistants",
   "version": "0.0.14",
-  "publisher": "ConnorHallman",
+  "publisher": "congtian",
   "icon": "icon.png",
   "repository": {
     "type": "git",
