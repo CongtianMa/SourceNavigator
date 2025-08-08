@@ -61,13 +61,13 @@ async function handleClassSource(args: any): Promise<any> {
     const sourceCode = document.getText(new vscode.Range(lineOffset, 0, lineOffset+lineLimit, Number.MAX_VALUE));
     
     return {
-        "result": "Class found: " + className,
+        "result": "已找到类 " + className,
         "file_path": symbol.location.uri.toString(),
         "source_code": sourceCode,
         "total_lines": document.lineCount,
         "summary": {
-            "linesBefore": "Lines before returned content: " + lineOffset,
-            "linesAfter": "Lines after returned content: " + Math.max(0, document.lineCount - lineOffset - lineLimit)
+            "linesBefore": "返回内容前有"+lineOffset+"行",
+            "linesAfter": "返回内容后有" + Math.max(0, document.lineCount - lineOffset - lineLimit) + "行"
         }
     };
 }

@@ -52,7 +52,7 @@ async function handleClassSource(args: any): Promise<any> {
     const qualifiedNames = new Set(filteredSymbols.map(symbol => symbol.containerName + "." + symbol.name));
     if (qualifiedNames.size > 1) {
         return {
-            "result": "Multiple classes found for " + className,
+            "result": "找到多个类 " + className,
             "sameNameClass": Array.from(qualifiedNames)
         };
     }
@@ -61,13 +61,13 @@ async function handleClassSource(args: any): Promise<any> {
     const sourceCode = document.getText(new vscode.Range(lineOffset, 0, lineOffset+lineLimit, Number.MAX_VALUE));
     
     return {
-        "result": "Class found: " + className,
+        "result": "已找到类 " + className,
         "file_path": symbol.location.uri.toString(),
         "source_code": sourceCode,
         "total_lines": document.lineCount,
         "summary": {
-            "linesBefore": "Lines before returned content: " + lineOffset,
-            "linesAfter": "Lines after returned content: " + Math.max(0, document.lineCount - lineOffset - lineLimit)
+            "linesBefore": "返回内容前有"+lineOffset+"行",
+            "linesAfter": "返回内容后有" + Math.max(0, document.lineCount - lineOffset - lineLimit) + "行"
         }
     };
 }
