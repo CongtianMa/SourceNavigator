@@ -1,7 +1,7 @@
 # SourceNavigator - AI Code Analysis Assistant
 
-<a href="https://marketplace.visualstudio.com/items?itemName=ConnorHallman.source-navigator">
-  <img src="https://img.shields.io/visual-studio-marketplace/d/ConnorHallman.source-navigator?label=VSCode%20Extension%20Downloads&cacheSeconds=3600" 
+<a href="https://marketplace.visualstudio.com/items?itemName=congtian.source-navigator">
+  <img src="https://img.shields.io/visual-studio-marketplace/d/congtian.source-navigator?label=VSCode%20Extension%20Downloads&cacheSeconds=3600" 
        alt="VSCode Extension Downloads" 
        width="250">
 </a>
@@ -59,7 +59,7 @@ SourceNavigator uses a modern architecture with separate processes for better pe
 ## 📦 Installation & Usage
 
 ### 1. Install Extension
-Install SourceNavigator extension from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=ConnorHallman.source-navigator)
+Install SourceNavigator extension from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=congtian.source-navigator)
 
 ### 2. Configure AI Assistant
 
@@ -138,11 +138,11 @@ Analyze complex dependency relationships in projects, enabling AI assistants to 
 
 ## 📈 Project Statistics
 
-[![Star History Chart](https://api.star-history.com/svg?repos=macongtian/SourceNavigator&type=Date)](https://star-history.com/#macongtian/SourceNavigator&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=CongtianMa/SourceNavigator&type=Date)](https://star-history.com/#CongtianMa/SourceNavigator&Date)
 
 ## 🤝 Contributing
 
-Welcome to submit Issues and Pull Requests to the [GitHub repository](https://github.com/macongtian/SourceNavigator).
+Welcome to submit Issues and Pull Requests to the [GitHub repository](https://github.com/CongtianMa/SourceNavigator).
 
 ## 🙏 Acknowledgments
 
