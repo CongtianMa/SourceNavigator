@@ -8,3 +8,4 @@ node_modules
 tests/**/*.log
 tests/**/*.tmp
 /tmp/source-navigator-server.lock 
+.history

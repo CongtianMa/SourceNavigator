@@ -7,7 +7,7 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/macongtian/SourceNavigator"
+    "url": "https://github.com/CongtianMa/SourceNavigator"
   },
   "engines": {
     "vscode": "^1.93.0",
